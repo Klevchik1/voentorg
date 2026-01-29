@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 YaBrowser/25.12.0.0 Safari/537.36" version="29.3.4">
+  <diagram name="Страница — 1" id="D0O9g8Ucru8pDhYHoN1m">
+    <mxGraphModel dx="1426" dy="768" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="600" width="400" x="220" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-3" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=26;" value="Военторг" vertex="1">
+          <mxGeometry height="60" width="130" x="355" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-4" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=26;" value="Вход" vertex="1">
+          <mxGeometry height="60" width="130" x="355" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="40" width="310" x="270" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="40" width="310" x="270" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-7" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Email" vertex="1">
+          <mxGeometry height="30" width="60" x="270" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-8" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Пароль" vertex="1">
+          <mxGeometry height="30" width="60" x="270" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Войти" vertex="1">
+          <mxGeometry height="40" width="310" x="270" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Нет аккаунта? Зарегестрируйтесь" vertex="1">
+          <mxGeometry height="30" width="120" x="360" y="554.5" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-13" edge="1" parent="1" style="endArrow=none;html=1;rounded=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="270" y="589" as="sourcePoint" />
+            <mxPoint x="580" y="589" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Админ-панель" vertex="1">
+          <mxGeometry height="40" width="310" x="270" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Продолжить как гость" vertex="1">
+          <mxGeometry height="40" width="310" x="270" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="p0Ol7QykOD82A-Cwmn1P-16" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Или продолжите как гость" vertex="1">
+          <mxGeometry height="30" width="150" x="350" y="599" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
