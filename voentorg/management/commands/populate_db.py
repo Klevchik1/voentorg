@@ -6,6 +6,8 @@ from django.conf import settings
 from voentorg.models import CustomUser, Category, Product, ProductImage, OrderStatus
 from django.utils.text import slugify
 from datetime import datetime, timedelta
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 
 class Command(BaseCommand):
@@ -16,6 +18,11 @@ class Command(BaseCommand):
             '--clear',
             action='store_true',
             help='Очистить базу данных перед заполнением',
+        )
+        parser.add_argument(
+            '--skip-images',
+            action='store_true',
+            help='Пропустить создание изображений',
         )
 
     def handle(self, *args, **options):
@@ -29,7 +36,7 @@ class Command(BaseCommand):
 
         self.create_order_statuses()
         self.create_categories()
-        self.create_products()
+        self.create_products(skip_images=options['skip_images'])
         self.create_test_users()
 
         self.stdout.write(self.style.SUCCESS('База данных успешно заполнена!'))
@@ -100,8 +107,64 @@ class Command(BaseCommand):
 
         self.stdout.write('Созданы категории товаров')
 
-    def create_products(self):
-        """Создание товаров с изображениями"""
+    def create_image_placeholder(self, text, width=400, height=300, bg_color=None, text_color='white'):
+        """Создает изображение-заглушку с текстом"""
+        try:
+            # Попробуем использовать PIL для создания изображений
+            from PIL import Image, ImageDraw, ImageFont
+
+            # Если PIL установлен, создаем настоящее изображение
+            if bg_color is None:
+                # Случайный цвет из палитры военной тематики
+                military_colors = [
+                    (45, 90, 45),  # темно-зеленый
+                    (93, 93, 93),  # серый
+                    (0, 0, 0),  # черный
+                    (128, 128, 128),  # серый
+                    (45, 45, 45),  # темно-серый
+                ]
+                bg_color = random.choice(military_colors)
+
+            # Создаем изображение
+            image = Image.new('RGB', (width, height), color=bg_color)
+            draw = ImageDraw.Draw(image)
+
+            # Пробуем использовать системный шрифт или стандартный
+            try:
+                font = ImageFont.truetype("arial.ttf", 24)
+            except:
+                font = ImageFont.load_default()
+
+            # Вычисляем размер текста
+            try:
+                text_bbox = draw.textbbox((0, 0), text, font=font)
+                text_width = text_bbox[2] - text_bbox[0]
+                text_height = text_bbox[3] - text_bbox[1]
+                text_x = (width - text_width) // 2
+                text_y = (height - text_height) // 2
+
+                # Рисуем текст
+                draw.text((text_x, text_y), text, fill=text_color, font=font)
+            except:
+                # Если не получилось с текстом, просто рисуем прямоугольник
+                draw.rectangle([50, 50, width - 50, height - 50], outline=text_color, width=3)
+
+            # Сохраняем в BytesIO
+            img_io = io.BytesIO()
+            image.save(img_io, format='JPEG')
+            img_io.seek(0)
+
+            return img_io
+
+        except ImportError:
+            # Если PIL не установлен, создаем простой текстовый файл как заглушку
+            self.stdout.write(self.style.WARNING('PIL/Pillow не установлен, создаем простую заглушку'))
+            content = f"Изображение: {text}\nРазмер: {width}x{height}"
+            img_io = io.BytesIO(content.encode('utf-8'))
+            return img_io
+
+    def create_products(self, skip_images=False):
+        """Создание товаров с локальными изображениями-заглушками"""
         # Получаем все категории
         categories = {
             'одежда': Category.objects.get(slug='tactical-clothing'),
@@ -122,7 +185,6 @@ class Command(BaseCommand):
                 'stock': 15,
                 'description': 'Прочная тактическая куртка с камуфляжем MULTICAM. Водонепроницаемая ткань, вентиляционные отверстия, множество карманов.',
                 'short_description': 'Куртка тактическая камуфляжная',
-                'colors': ['#5d5d5d', '#2d5a2d', '#000000'],
             },
             {
                 'name': 'Брюки тактические Flecktarn',
@@ -131,7 +193,6 @@ class Command(BaseCommand):
                 'stock': 22,
                 'description': 'Тактические брюки немецкого камуфляжа Flecktarn. Усиленные колени, карманы для наколенников, регулируемая талия.',
                 'short_description': 'Брюки полевые камуфляжные',
-                'colors': ['#5d5d5d', '#808080'],
             },
             {
                 'name': 'Футболка тактическая черная',
@@ -140,7 +201,6 @@ class Command(BaseCommand):
                 'stock': 40,
                 'description': 'Тактическая футболка из быстросохнущего материала. Вентиляционные вставки, плоские швы.',
                 'short_description': 'Футболка для активного отдыха',
-                'colors': ['#000000', '#2d5a2d'],
             },
 
             # Тактические рюкзаки
@@ -151,7 +211,6 @@ class Command(BaseCommand):
                 'stock': 10,
                 'description': 'Тактический рюкзак объемом 30 литров. Система MOLLE, отделение для гидратора, поясной ремень.',
                 'short_description': 'Рюкзак для походов и тактики',
-                'colors': ['#000000', '#2d5a2d', '#5d5d5d'],
             },
             {
                 'name': 'Штурмовой рюкзак 20л',
@@ -160,7 +219,6 @@ class Command(BaseCommand):
                 'stock': 8,
                 'description': 'Компактный штурмовой рюкзак для быстрых вылазок. Прочная ткань Cordura, система быстрого доступа.',
                 'short_description': 'Компактный рюкзак для активного использования',
-                'colors': ['#5d5d5d', '#000000'],
             },
 
             # Тактическое снаряжение
@@ -171,7 +229,6 @@ class Command(BaseCommand):
                 'stock': 12,
                 'description': 'Разгрузочный жилет с системой MOLLE. Регулируемые лямки, возможность крепления дополнительных подсумков.',
                 'short_description': 'Жилет разгрузочный тактический',
-                'colors': ['#000000', '#2d5a2d'],
             },
             {
                 'name': 'Подсумок для магазинов',
@@ -180,7 +237,6 @@ class Command(BaseCommand):
                 'stock': 25,
                 'description': 'Подсумок на 3 магазина. Быстрое крепление на систему MOLLE, защита от влаги.',
                 'short_description': 'Подсумок для тактического снаряжения',
-                'colors': ['#000000', '#5d5d5d'],
             },
 
             # Палатки и спальные мешки
@@ -191,7 +247,6 @@ class Command(BaseCommand):
                 'stock': 6,
                 'description': 'Двухместная палатка для кемпинга. Водонепроницаемая, с москитной сеткой, вес 3.5 кг.',
                 'short_description': 'Палатка для кемпинга и походов',
-                'colors': ['#2d5a2d', '#5d5d5d'],
             },
             {
                 'name': 'Спальный мешок -5°C',
@@ -200,7 +255,6 @@ class Command(BaseCommand):
                 'stock': 15,
                 'description': 'Спальный мешок комфортной температуры -5°C. Компактный, легкий, с водоотталкивающей пропиткой.',
                 'short_description': 'Спальный мешок для походов',
-                'colors': ['#000000', '#2d5a2d'],
             },
 
             # Обувь
@@ -211,7 +265,6 @@ class Command(BaseCommand):
                 'stock': 18,
                 'description': 'Тактические ботинки с мембраной. Анатомическая стелька, антискользящая подошва, защита щиколотки.',
                 'short_description': 'Ботинки для активного отдыха',
-                'colors': ['#000000', '#5d5d5d'],
             },
             {
                 'name': 'Кроссовки треккинговые',
@@ -220,7 +273,6 @@ class Command(BaseCommand):
                 'stock': 24,
                 'description': 'Треккинговые кроссовки для походов. Дышащий материал, амортизирующая подошва.',
                 'short_description': 'Кроссовки для пеших походов',
-                'colors': ['#5d5d5d', '#2d5a2d'],
             },
 
             # Тактическая медицина
@@ -231,7 +283,6 @@ class Command(BaseCommand):
                 'stock': 20,
                 'description': 'Тактическая аптечка первой помощи. Водонепроницаемый кейс, базовый набор медикаментов.',
                 'short_description': 'Аптечка для полевых условий',
-                'colors': ['#000000', '#5d5d5d'],
             },
             {
                 'name': 'Турникет CAT',
@@ -240,7 +291,6 @@ class Command(BaseCommand):
                 'stock': 30,
                 'description': 'Турникет тактический CAT. Быстрое наложение одной рукой, прочная конструкция.',
                 'short_description': 'Турникет для оказания первой помощи',
-                'colors': ['#000000'],
             },
 
             # Аксессуары
@@ -251,7 +301,6 @@ class Command(BaseCommand):
                 'stock': 35,
                 'description': 'Армейская фляга из нержавеющей стали. Объем 1 литр, чехол в комплекте.',
                 'short_description': 'Фляга для воды',
-                'colors': ['#c3b091', '#000000'],
             },
             {
                 'name': 'Тактический фонарь',
@@ -260,15 +309,8 @@ class Command(BaseCommand):
                 'stock': 28,
                 'description': 'Тактический фонарь с несколькими режимами. Яркость 1000 люмен, ударопрочный корпус.',
                 'short_description': 'Фонарь для тактического использования',
-                'colors': ['#000000'],
             },
         ]
-
-        # Функция для создания изображений-заглушек через API
-        def get_image_url(product_name, color='2d5a2d', text_color='ffffff'):
-            """Генерирует URL для изображения-заглушки"""
-            product_slug = slugify(product_name)[:20]
-            return f'https://via.placeholder.com/400x300/{color}/{text_color}?text={product_slug}'
 
         # Создаем товары
         for i, product_data in enumerate(products_data):
@@ -285,27 +327,57 @@ class Command(BaseCommand):
                 }
             )
 
-            if created:
+            if created and not skip_images:
+                product_name = product_data['name']
+                slug_name = slugify(product_name)
+
                 # Создаем основное изображение
-                color_code = product_data['colors'][0].replace('#', '')
-                ProductImage.objects.create(
-                    product=product,
-                    image=get_image_url(product_data['name'], color_code),
-                    is_main=True,
-                    display_order=0
-                )
+                try:
+                    # Создаем изображение с названием товара
+                    short_name = product_name[:20]  # Берем первые 20 символов
+                    img_io = self.create_image_placeholder(short_name, 400, 300)
 
-                # Создаем дополнительные изображения (2-3 штуки)
+                    # Создаем файл Django
+                    django_file = File(img_io, name=f"{slug_name}_main.jpg")
+
+                    # Сохраняем основное изображение товара
+                    product.image.save(django_file.name, django_file, save=False)
+
+                    self.stdout.write(self.style.SUCCESS(f'Создано основное изображение для: {product_name}'))
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f'Ошибка создания изображения для {product_name}: {str(e)}'))
+                    # Если не удалось создать изображение, оставляем поле пустым
+
+                product.save()
+
+                # Создаем дополнительные изображения (1-3 штуки)
                 for j in range(1, random.randint(2, 4)):
-                    color_code = random.choice(product_data['colors']).replace('#', '')
-                    ProductImage.objects.create(
-                        product=product,
-                        image=get_image_url(f"{product_data['name']} вид {j}", color_code),
-                        is_main=False,
-                        display_order=j
-                    )
+                    try:
+                        # Создаем изображение с номером вида
+                        text = f"{short_name}\nВид {j}"
+                        img_io = self.create_image_placeholder(text, 400, 300)
 
-                self.stdout.write(f'Создан товар: {product.name}')
+                        # Создаем файл Django
+                        django_file = File(img_io, name=f"{slug_name}_{j}.jpg")
+
+                        # Создаем запись ProductImage
+                        ProductImage.objects.create(
+                            product=product,
+                            image=django_file,
+                            is_main=False,
+                            display_order=j
+                        )
+
+                        self.stdout.write(
+                            self.style.SUCCESS(f'  Создано дополнительное изображение {j} для: {product_name}'))
+                    except Exception as e:
+                        self.stdout.write(self.style.WARNING(
+                            f'  Ошибка создания дополнительного изображения {j} для {product_name}: {str(e)}'))
+                        continue
+
+                self.stdout.write(self.style.SUCCESS(f'Создан товар: {product.name} с локальными изображениями'))
+            elif created:
+                self.stdout.write(self.style.SUCCESS(f'Создан товар: {product.name} (без изображений)'))
 
     def create_test_users(self):
         """Создание тестовых пользователей"""
