@@ -1,0 +1,118 @@
+{% extends 'voentorg/base.html' %}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Вход в систему</h2>
+    
+    {% if form.errors %}
+    <div class="alert alert-error">
+        <i class="fas fa-exclamation-circle"></i>
+        Неверное имя пользователя или пароль. Попробуйте снова.
+    </div>
+    {% endif %}
+    
+    <form method="post" class="auth-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_username">Имя пользователя:</label>
+            <input type="text" name="username" id="id_username" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_password">Пароль:</label>
+            <input type="password" name="password" id="id_password" class="form-control" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Войти
+        </button>
+        
+        <p class="auth-links">
+            Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a>
+        </p>
+    </form>
+</div>
+
+<style>
+.auth-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.auth-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #2d5a2d;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #2d5a2d;
+    box-shadow: 0 0 0 2px rgba(45, 90, 45, 0.2);
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.btn-primary {
+    background-color: #2d5a2d;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #1a3a1a;
+}
+
+.auth-links {
+    margin-top: 20px;
+    text-align: center;
+    color: #666;
+}
+
+.auth-links a {
+    color: #2d5a2d;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

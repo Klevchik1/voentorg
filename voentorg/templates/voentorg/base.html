@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Военторг - Тактическая экипировка{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'voentorg/css/main.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <h1>ВОЕН<span>ТОРГ</span></h1>
+            </div>
+
+            <div class="user-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}" class="user-profile">
+                        <i class="fas fa-user"></i> {{ user.username }}
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </a>
+                    <a href="{% url 'register' %}" class="register-btn">
+                        <i class="fas fa-user-plus"></i> Регистрация
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'cart' %}" class="cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Навигация -->
+    <nav>
+        <div class="container nav-container">
+            <ul class="nav-links">
+                <li><a href="{% url 'home' %}" class="active">Главная</a></li>
+                <li><a href="{% url 'catalog' %}">Каталог</a></li>
+                <li><a href="{% url 'about' %}">О нас</a></li>
+                <li><a href="{% url 'contacts' %}">Контакты</a></li>
+                {% if user.is_staff %}
+                    <li><a href="/admin/">Админ-панель</a></li>
+                {% endif %}
+            </ul>
+
+            <form class="search-bar" action="{% url 'search' %}" method="get">
+                <input type="text" name="q" placeholder="Поиск товаров..." value="{{ request.GET.q }}">
+                <button type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Системные сообщения -->
+    {% if messages %}
+    <div class="system-messages container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Основной контент -->
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Подвал -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Военторг</h3>
+                    <p>Интернет-магазин тактической экипировки и снаряжения</p>
+                    <p>© 2024 Все права защищены</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
+                    <p><i class="fas fa-envelope"></i> info@voentorg.ru</p>
+                    <p><i class="fas fa-map-marker-alt"></i> г. Москва, ул. Армейская, д. 15</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Часы работы</h3>
+                    <p>Пн-Пт: 9:00 - 18:00</p>
+                    <p>Сб-Вс: 10:00 - 16:00</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{% static 'voentorg/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
