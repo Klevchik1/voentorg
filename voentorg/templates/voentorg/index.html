@@ -1,6 +1,11 @@
 {% extends 'voentorg/base.html' %}
+{% load static %}
 
 {% block title %}Военторг - Каталог{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'voentorg/css/main.css' %}">
+{% endblock %}
 
 {% block content %}
 <!-- Заголовок каталога -->
@@ -8,7 +13,7 @@
     <h2>Каталог</h2>
     <div class="system-message">
         <i class="fas fa-info-circle"></i>
-        <span>Сообщения системы будут отображаться здесь</span>
+        <span>Найдено товаров: {{ products|length }}</span>
     </div>
 </div>
 
@@ -16,60 +21,49 @@
     <!-- Левая колонка: Фильтры -->
     <aside class="filters-sidebar">
         <h3><i class="fas fa-filter"></i> Фильтры</h3>
-        
+
         <!-- Категории -->
         <div class="filter-section">
             <h4>Категории</h4>
             <ul class="category-list">
-                <li><a href="?category=all" class="active">Все</a></li>
-                <li><a href="?category=clothing">Тактическая одежда</a></li>
-                <li><a href="?category=medicine">Тактическая медицина</a></li>
-                <li><a href="?category=backpacks">Тактические рюкзаки</a></li>
-                <li><a href="?category=gear">Тактическое снаряжение</a></li>
-                <li><a href="?category=sleeping">Палатки и спальные мешки</a></li>
-                <li><a href="?category=footwear">Обувь</a></li>
-                <li><a href="?category=melody">Мелодия</a></li>
+                <li><a href="?category=all" class="{% if not selected_category %}active{% endif %}">Все</a></li>
+                {% for category in categories %}
+                <li>
+                    <a href="?category={{ category.id }}"
+                       class="{% if selected_category == category.id %}active{% endif %}">
+                        {{ category.name }}
+                    </a>
+                </li>
+                {% endfor %}
             </ul>
         </div>
-        
+
         <!-- Сортировка -->
         <div class="filter-section">
             <h4>Сортировка</h4>
             <select id="sort-select" class="sort-select">
-                <option value="popular">По популярности</option>
-                <option value="price_asc">Цена: по возрастанию</option>
-                <option value="price_desc">Цена: по убыванию</option>
-                <option value="newest">Сначала новые</option>
+                <option value="popular" {% if sort == 'popular' %}selected{% endif %}>По популярности</option>
+                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Цена: по возрастанию</option>
+                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Цена: по убыванию</option>
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Сначала новые</option>
             </select>
         </div>
-        
+
         <!-- Цена -->
         <div class="filter-section">
             <h4>Цена</h4>
             <div class="price-range">
                 <div class="price-inputs">
-                    <input type="number" id="min-price" placeholder="От" min="0" value="0">
+                    <input type="number" id="min-price" placeholder="От" min="0" value="{{ min_price|default:0 }}">
                     <span>-</span>
-                    <input type="number" id="max-price" placeholder="До" min="0" value="10000">
+                    <input type="number" id="max-price" placeholder="До" min="0" value="{{ max_price|default:10000 }}">
                 </div>
                 <div class="price-slider">
                     <input type="range" id="price-slider" min="0" max="10000" value="5000">
                 </div>
             </div>
         </div>
-        
-        <!-- Цвет -->
-        <div class="filter-section">
-            <h4>Цвет</h4>
-            <div class="color-options">
-                <span class="color-option" data-color="black" style="background-color: #000;"></span>
-                <span class="color-option" data-color="green" style="background-color: #2d5a2d;"></span>
-                <span class="color-option" data-color="khaki" style="background-color: #c3b091;"></span>
-                <span class="color-option" data-color="gray" style="background-color: #808080;"></span>
-                <span class="color-option" data-color="camouflage" style="background-color: #5d5d5d;"></span>
-            </div>
-        </div>
-        
+
         <!-- Кнопки фильтров -->
         <div class="filter-buttons">
             <button class="apply-filters" id="apply-filters">
@@ -83,222 +77,60 @@
 
     <!-- Правая колонка: Товары -->
     <section class="products-grid">
-        <div class="products-header">
-            <p class="products-count">Найдено товаров: <span id="product-count">8</span></p>
-        </div>
-        
+        {% if products %}
         <div class="products-container" id="products-container">
-            <!-- Товар 1 -->
-            <div class="product-card" data-category="clothing" data-price="4500" data-color="green">
+            {% for product in products %}
+            <div class="product-card" data-category="{{ product.category.id }}" data-price="{{ product.price }}" data-id="{{ product.id }}">
                 <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/2d5a2d/ffffff?text=Куртка+тактическая" alt="Тактическая куртка">
+                    {% if product.images.first %}
+                    <img src="{{ product.images.first.image }}" alt="{{ product.name }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x200/2d5a2d/ffffff?text={{ product.name|slice:':20' }}" alt="{{ product.name }}">
+                    {% endif %}
+
+                    {% if product.stock < 5 %}
+                    <span class="product-badge" style="background-color: #e74c3c;">Заканчивается</span>
+                    {% elif forloop.counter <= 3 %}
                     <span class="product-badge">Хит продаж</span>
+                    {% endif %}
                 </div>
                 <div class="product-info">
-                    <h3 class="product-title">Тактическая куртка</h3>
-                    <div class="product-price">4 500 ₽</div>
+                    <h3 class="product-title">{{ product.name }}</h3>
+                    <div class="product-price">{{ product.price }} ₽</div>
+
                     <div class="product-colors">
                         <span class="color-dot" style="background-color: #2d5a2d;"></span>
-                        <span class="color-dot" style="background-color: #000;"></span>
-                        <span class="color-dot" style="background-color: #808080;"></span>
-                    </div>
-                    <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 15 шт.
-                    </div>
-                    <div class="product-actions">
-                        <button class="view-product" data-product="1">
-                            <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="1">
-                            <i class="fas fa-cart-plus"></i> В корзину
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Товар 2 -->
-            <div class="product-card" data-category="footwear" data-price="3200" data-color="black">
-                <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/000000/ffffff?text=Ботинки+армейские" alt="Армейские ботинки">
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">Армейские ботинки</h3>
-                    <div class="product-price">3 200 ₽</div>
-                    <div class="product-colors">
-                        <span class="color-dot" style="background-color: #000;"></span>
-                        <span class="color-dot" style="background-color: #c3b091;"></span>
-                    </div>
-                    <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 25 шт.
-                    </div>
-                    <div class="product-actions">
-                        <button class="view-product" data-product="2">
-                            <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="2">
-                            <i class="fas fa-cart-plus"></i> В корзину
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Товар 3 -->
-            <div class="product-card" data-category="backpacks" data-price="2800" data-color="camouflage">
-                <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/5d5d5d/ffffff?text=Рюкзак+тактический" alt="Тактический рюкзак">
-                    <span class="product-badge">Новинка</span>
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">Тактический рюкзак</h3>
-                    <div class="product-price">2 800 ₽</div>
-                    <div class="product-colors">
+                        <span class="color-dot" style="background-color: #000000;"></span>
                         <span class="color-dot" style="background-color: #5d5d5d;"></span>
-                        <span class="color-dot" style="background-color: #2d5a2d;"></span>
                     </div>
-                    <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 10 шт.
-                    </div>
-                    <div class="product-actions">
-                        <button class="view-product" data-product="3">
-                            <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="3">
-                            <i class="fas fa-cart-plus"></i> В корзину
-                        </button>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Товар 4 -->
-            <div class="product-card" data-category="medicine" data-price="1500" data-color="black">
-                <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/000000/ffffff?text=Аптечка+тактическая" alt="Аптечка тактическая">
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">Аптечка тактическая</h3>
-                    <div class="product-price">1 500 ₽</div>
-                    <div class="product-colors">
-                        <span class="color-dot" style="background-color: #000;"></span>
-                        <span class="color-dot" style="background-color: #2d5a2d;"></span>
-                    </div>
                     <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 30 шт.
+                        <i class="fas fa-box"></i> В наличии: {{ product.stock }} шт.
                     </div>
-                    <div class="product-actions">
-                        <button class="view-product" data-product="4">
-                            <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="4">
-                            <i class="fas fa-cart-plus"></i> В корзину
-                        </button>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Товар 5 -->
-            <div class="product-card" data-category="gear" data-price="2200" data-color="khaki">
-                <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/c3b091/000000?text=Разгрузочный+жилет" alt="Разгрузочный жилет">
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">Разгрузочный жилет</h3>
-                    <div class="product-price">2 200 ₽</div>
-                    <div class="product-colors">
-                        <span class="color-dot" style="background-color: #c3b091;"></span>
-                        <span class="color-dot" style="background-color: #2d5a2d;"></span>
-                    </div>
-                    <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 18 шт.
-                    </div>
                     <div class="product-actions">
-                        <button class="view-product" data-product="5">
+                        <a href="{% url 'product_detail' product.id %}" class="view-product">
                             <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="5">
+                        </a>
+                        <button class="add-to-cart" data-product="{{ product.id }}">
                             <i class="fas fa-cart-plus"></i> В корзину
                         </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Товар 6 -->
-            <div class="product-card" data-category="sleeping" data-price="3500" data-color="green">
-                <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/2d5a2d/ffffff?text=Спальный+мешок" alt="Спальный мешок">
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">Спальный мешок армейский</h3>
-                    <div class="product-price">3 500 ₽</div>
-                    <div class="product-colors">
-                        <span class="color-dot" style="background-color: #2d5a2d;"></span>
-                        <span class="color-dot" style="background-color: #000;"></span>
-                    </div>
-                    <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 12 шт.
-                    </div>
-                    <div class="product-actions">
-                        <button class="view-product" data-product="6">
-                            <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="6">
-                            <i class="fas fa-cart-plus"></i> В корзину
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Товар 7 -->
-            <div class="product-card" data-category="melody" data-price="800" data-color="black">
-                <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/000000/ffffff?text=Фляга+армейская" alt="Армейская фляга">
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">Армейская фляга</h3>
-                    <div class="product-price">800 ₽</div>
-                    <div class="product-colors">
-                        <span class="color-dot" style="background-color: #000;"></span>
-                        <span class="color-dot" style="background-color: #c3b091;"></span>
-                    </div>
-                    <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 50 шт.
-                    </div>
-                    <div class="product-actions">
-                        <button class="view-product" data-product="7">
-                            <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="7">
-                            <i class="fas fa-cart-plus"></i> В корзину
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Товар 8 -->
-            <div class="product-card" data-category="clothing" data-price="1800" data-color="gray">
-                <div class="product-image">
-                    <img src="https://via.placeholder.com/300x200/808080/ffffff?text=Штаны+камуфляжные" alt="Штаны камуфляжные">
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">Штаны камуфляжные</h3>
-                    <div class="product-price">1 800 ₽</div>
-                    <div class="product-colors">
-                        <span class="color-dot" style="background-color: #808080;"></span>
-                        <span class="color-dot" style="background-color: #2d5a2d;"></span>
-                    </div>
-                    <div class="product-sessions">
-                        <i class="fas fa-box"></i> В наличии: 22 шт.
-                    </div>
-                    <div class="product-actions">
-                        <button class="view-product" data-product="8">
-                            <i class="fas fa-eye"></i> Посмотреть
-                        </button>
-                        <button class="add-to-cart" data-product="8">
-                            <i class="fas fa-cart-plus"></i> В корзину
-                        </button>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
+        {% else %}
+        <div class="no-products">
+            <i class="fas fa-box-open fa-3x"></i>
+            <h3>Товары не найдены</h3>
+            <p>Попробуйте изменить параметры фильтрации</p>
+        </div>
+        {% endif %}
     </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'voentorg/js/main.js' %}"></script>
 {% endblock %}

@@ -289,6 +289,29 @@ class Product(models.Model):
         self.stock += quantity
         self.save()
 
+    @property
+    def main_image(self):
+        """Получить основное изображение товара"""
+        main_img = self.images.filter(is_main=True).first()
+        if main_img:
+            return main_img.image
+        # Или первое изображение, если основное не указано
+        first_img = self.images.first()
+        if first_img:
+            return first_img.image
+        # Или заглушка
+        return "https://via.placeholder.com/300x200/2d5a2d/ffffff?text=Нет+изображения"
+
+    @property
+    def all_images(self):
+        """Все изображения товара"""
+        return self.images.all()
+
+    @property
+    def additional_images(self):
+        """Дополнительные изображения (кроме основного)"""
+        return self.images.filter(is_main=False)
+
 
 class ProductImage(models.Model):
     """Изображения товаров"""

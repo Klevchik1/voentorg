@@ -1,0 +1,137 @@
+{% extends 'voentorg/base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'voentorg/css/product.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="product-detail">
+    <nav class="breadcrumbs">
+        <a href="{% url 'home' %}">Главная</a> &gt;
+        <a href="{% url 'catalog' %}">Каталог</a> &gt;
+        {% if product.category %}
+        <a href="{% url 'catalog' %}?category={{ product.category.id }}">{{ product.category.name }}</a> &gt;
+        {% endif %}
+        <span>{{ product.name }}</span>
+    </nav>
+
+    <div class="product-main">
+        <!-- Галерея изображений -->
+        <div class="product-gallery">
+            <div class="main-image">
+                {% with main_image=product.images.filter.is_main.first|default:product.images.first %}
+                {% if main_image %}
+                <img src="{{ main_image.image }}" alt="{{ product.name }}" id="main-product-image">
+                {% else %}
+                <img src="https://via.placeholder.com/500x400/2d5a2d/ffffff?text={{ product.name|slice:':20' }}" alt="{{ product.name }}" id="main-product-image">
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="thumbnails">
+                {% for image in product.images.all %}
+                <div class="thumbnail {% if forloop.first %}active{% endif %}" data-image="{{ image.image }}">
+                    <img src="{{ image.image }}" alt="{{ product.name }} - изображение {{ forloop.counter }}">
+                </div>
+                {% empty %}
+                <div class="thumbnail active" data-image="https://via.placeholder.com/500x400/2d5a2d/ffffff?text={{ product.name|slice:':20' }}">
+                    <img src="https://via.placeholder.com/100x80/2d5a2d/ffffff?text={{ product.name|slice:':10' }}" alt="{{ product.name }}">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Информация о товаре -->
+        <div class="product-info">
+            <h1>{{ product.name }}</h1>
+
+            <div class="product-meta">
+                {% if product.category %}
+                <span class="category">
+                    <i class="fas fa-tag"></i> {{ product.category.name }}
+                </span>
+                {% endif %}
+
+                <span class="sku">
+                    <i class="fas fa-hashtag"></i> Артикул: {{ product.id }}
+                </span>
+            </div>
+
+            <div class="product-price-section">
+                <div class="price">{{ product.price }} ₽</div>
+
+                <div class="stock-status {% if product.stock > 10 %}in-stock{% elif product.stock > 0 %}low-stock{% else %}out-of-stock{% endif %}">
+                    <i class="fas fa-box"></i>
+                    {% if product.stock > 10 %}
+                    В наличии ({{ product.stock }} шт.)
+                    {% elif product.stock > 0 %}
+                    Мало на складе ({{ product.stock }} шт.)
+                    {% else %}
+                    Нет в наличии
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="product-description">
+                <h3>Описание</h3>
+                <p>{{ product.description|linebreaks }}</p>
+
+                {% if product.short_description %}
+                <p><strong>Кратко:</strong> {{ product.short_description }}</p>
+                {% endif %}
+            </div>
+
+            <div class="product-actions">
+                {% if product.stock > 0 %}
+                <div class="quantity-selector">
+                    <button class="qty-btn minus">-</button>
+                    <input type="number" id="quantity" value="1" min="1" max="{{ product.stock }}">
+                    <button class="qty-btn plus">+</button>
+                </div>
+
+                <button class="btn-add-to-cart" data-product="{{ product.id }}">
+                    <i class="fas fa-cart-plus"></i> Добавить в корзину
+                </button>
+                {% else %}
+                <button class="btn-notify" disabled>
+                    <i class="fas fa-bell"></i> Сообщить о поступлении
+                </button>
+                {% endif %}
+
+                <button class="btn-wishlist">
+                    <i class="far fa-heart"></i> В избранное
+                </button>
+            </div>
+
+            <div class="product-specs">
+                <h3>Характеристики</h3>
+                <table>
+                    <tr>
+                        <td>Категория</td>
+                        <td>{{ product.category.name|default:"Не указана" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Наличие</td>
+                        <td>{{ product.stock }} шт.</td>
+                    </tr>
+                    <tr>
+                        <td>Статус</td>
+                        <td>{% if product.is_available %}Доступен{% else %}Недоступен{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Добавлен</td>
+                        <td>{{ product.created_at|date:"d.m.Y" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'voentorg/js/product.js' %}"></script>
+{% endblock %}

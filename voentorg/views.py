@@ -5,18 +5,55 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseRedirect
 from .models import Product, Category, Cart, CartItem, Order, OrderItem
-from .forms import CustomUserCreationForm  # создадим позже
+from .forms import CustomUserCreationForm
+from django.db import models
 
 
-# Главная страница (уже есть)
+# Главная страница
 def home(request):
     """Главная страница с каталогом товаров"""
-    products = Product.objects.filter(is_available=True)[:12]
+    products = Product.objects.filter(is_available=True)
     categories = Category.objects.all()
+
+    # Фильтрация по категории
+    category_id = request.GET.get('category')
+    if category_id and category_id != 'all':
+        try:
+            category_id = int(category_id)
+            products = products.filter(category_id=category_id)
+            selected_category = category_id
+        except ValueError:
+            selected_category = None
+    else:
+        selected_category = None
+
+    # Сортировка
+    sort = request.GET.get('sort', 'popular')
+    if sort == 'price_asc':
+        products = products.order_by('price')
+    elif sort == 'price_desc':
+        products = products.order_by('-price')
+    elif sort == 'newest':
+        products = products.order_by('-created_at')
+    else:
+        # По умолчанию - сначала товары с высоким запасом
+        products = products.order_by('-stock', '-created_at')
+
+    # Определяем диапазон цен для фильтров
+    if products.exists():
+        min_price = products.aggregate(models.Min('price'))['price__min']
+        max_price = products.aggregate(models.Max('price'))['price__max']
+    else:
+        min_price = 0
+        max_price = 10000
 
     context = {
         'products': products,
         'categories': categories,
+        'selected_category': selected_category,
+        'sort': sort,
+        'min_price': min_price,
+        'max_price': max_price,
         'title': 'Военторг - Каталог товаров'
     }
     return render(request, 'voentorg/index.html', context)
