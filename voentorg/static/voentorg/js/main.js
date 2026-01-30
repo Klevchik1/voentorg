@@ -16,65 +16,80 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===== ФУНКЦИИ КОРЗИНЫ =====
 function initializeCart() {
-    const cartCountElement = document.querySelector('.cart-count');
-
-    // Загружаем количество товаров в корзине
     updateCartCount();
 
-    // События для кнопок добавления в корзину
+    // Обработка кликов на кнопки добавления в корзину
     document.addEventListener('click', function(e) {
         if (e.target.closest('.add-to-cart')) {
             const button = e.target.closest('.add-to-cart');
             const productId = button.getAttribute('data-product');
             addToCart(productId);
+            e.preventDefault();
+        }
+
+        if (e.target.closest('.btn-add-to-cart')) {
+            const button = e.target.closest('.btn-add-to-cart');
+            const productId = button.getAttribute('data-product');
+            const quantityInput = document.getElementById('quantity');
+            const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+            addToCart(productId, quantity);
+            e.preventDefault();
         }
     });
 }
 
 function updateCartCount() {
-    // Временная реализация через localStorage
-    const cart = JSON.parse(localStorage.getItem('voentorg_cart') || '[]');
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-    const cartCountElement = document.querySelector('.cart-count');
-    if (cartCountElement) {
-        cartCountElement.textContent = totalItems;
-    }
+    // Используем AJAX для получения актуального количества
+    fetch('/cart/get_count/', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const cartCountElement = document.querySelector('.cart-count');
+        if (cartCountElement) {
+            cartCountElement.textContent = data.count || 0;
+        }
+    })
+    .catch(error => {
+        console.error('Error updating cart count:', error);
+        // Fallback на localStorage
+        const cart = JSON.parse(localStorage.getItem('voentorg_cart') || '[]');
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartCountElement = document.querySelector('.cart-count');
+        if (cartCountElement) {
+            cartCountElement.textContent = totalItems;
+        }
+    });
 }
 
-function addToCart(productId) {
-    // Временная реализация через localStorage
-    let cart = JSON.parse(localStorage.getItem('voentorg_cart') || '[]');
+function addToCart(productId, quantity = 1) {
+    const formData = new FormData();
+    formData.append('quantity', quantity);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
 
-    // Проверяем, есть ли товар уже в корзине
-    const existingItemIndex = cart.findIndex(item => item.id == productId);
-
-    if (existingItemIndex !== -1) {
-        // Увеличиваем количество
-        cart[existingItemIndex].quantity += 1;
-    } else {
-        // Добавляем новый товар
-        const productCard = document.querySelector(`.add-to-cart[data-product="${productId}"]`)?.closest('.product-card');
-        const productName = productCard?.querySelector('.product-title')?.textContent || `Товар #${productId}`;
-        const productPrice = parseFloat(productCard?.querySelector('.product-price')?.textContent?.replace(/[^\d.]/g, '') || 0);
-
-        cart.push({
-            id: productId,
-            name: productName,
-            price: productPrice,
-            quantity: 1,
-            addedAt: new Date().toISOString()
-        });
-    }
-
-    // Сохраняем корзину
-    localStorage.setItem('voentorg_cart', JSON.stringify(cart));
-
-    // Обновляем счетчик
-    updateCartCount();
-
-    // Показываем уведомление
-    showNotification('Товар добавлен в корзину', 'success');
+    fetch(`/cart/add/${productId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateCartCount();
+            showNotification(data.message || 'Товар добавлен в корзину', 'success');
+        } else {
+            showNotification(data.message || 'Ошибка при добавлении в корзину', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ошибка при добавлении в корзину', 'error');
+    });
 }
 
 // ===== ФУНКЦИИ ФИЛЬТРОВ =====
@@ -258,6 +273,22 @@ function initializeSearch() {
 }
 
 // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+function getCsrfToken() {
+    // Ищем CSRF токен в cookies
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, 10) === ('csrftoken=')) {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function showNotification(message, type = 'info') {
     // Создаем элемент уведомления
     const notification = document.createElement('div');

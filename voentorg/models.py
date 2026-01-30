@@ -517,7 +517,19 @@ class Order(models.Model):
         CustomUser,
         on_delete=models.RESTRICT,
         related_name='orders',
-        verbose_name='Пользователь'
+        verbose_name='Пользователь',
+        null=True,  # Разрешаем null для гостей
+        blank=True
+    )
+    guest_email = models.EmailField(
+        max_length=100,
+        blank=True,
+        verbose_name='Email гостя'
+    )
+    guest_name = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Имя гостя'
     )
     status = models.ForeignKey(
         OrderStatus,
@@ -567,17 +579,41 @@ class Order(models.Model):
             models.Index(fields=['user']),
             models.Index(fields=['status']),
             models.Index(fields=['created_at']),
-            models.Index(fields=['user', 'status']),
+            models.Index(fields=['guest_email']),
         ]
 
     def __str__(self):
-        return f"Заказ #{self.id} от {self.user.username} ({self.total_amount} руб.)"
+        if self.user:
+            return f"Заказ #{self.id} от {self.user.username} ({self.total_amount} руб.)"
+        else:
+            return f"Заказ #{self.id} от гостя {self.guest_email} ({self.total_amount} руб.)"
 
     def save(self, *args, **kwargs):
-        """Устанавливаем контактный телефон из профиля пользователя, если не указан"""
-        if not self.contact_phone and self.user.phone:
+        """Устанавливаем контактный телефон"""
+        if not self.contact_phone and self.user and self.user.phone:
             self.contact_phone = self.user.phone
         super().save(*args, **kwargs)
+
+    @property
+    def customer_name(self):
+        """Имя заказчика"""
+        if self.user:
+            return self.user.get_full_name() or self.user.username
+        else:
+            return self.guest_name or self.guest_email
+
+    @property
+    def customer_email(self):
+        """Email заказчика"""
+        if self.user:
+            return self.user.email
+        else:
+            return self.guest_email
+
+    @property
+    def total_items(self):
+        """Общее количество товаров в заказе"""
+        return sum(item.quantity for item in self.items.all())
 
     @property
     def total_items(self):

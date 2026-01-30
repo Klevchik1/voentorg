@@ -1,11 +1,172 @@
 {% extends 'voentorg/base.html' %}
+{% load static %}
 
-{% block title %}Каталог товаров{% endblock %}
+{% block title %}Корзина{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'voentorg/css/cart.css' %}">
+{% endblock %}
 
 {% block content %}
-<h2>Каталог товаров</h2>
-<p>Страница каталога находится в разработке.</p>
-<a href="{% url 'home' %}" class="btn btn-primary">
-    <i class="fas fa-arrow-left"></i> Вернуться на главную
-</a>
+<div class="cart-container">
+    <div class="cart-header">
+        <h2><i class="fas fa-shopping-cart"></i> Корзина</h2>
+        <div class="system-message">
+            <i class="fas fa-info-circle"></i>
+            <span>Сообщения системы</span>
+        </div>
+    </div>
+
+    {% if not cart_data.items %}
+        <!-- Пустая корзина -->
+        <div class="empty-cart">
+            <div class="empty-icon">
+                <i class="fas fa-shopping-cart fa-4x"></i>
+            </div>
+            <h3>Ваша корзина пуста</h3>
+            <p>Добавьте товары из каталога, чтобы сделать заказ</p>
+            <div class="empty-actions">
+                <a href="{% url 'catalog' %}" class="btn-catalog">
+                    <i class="fas fa-shopping-bag"></i> Перейти в каталог
+                </a>
+                <a href="{% url 'home' %}" class="btn-home">
+                    <i class="fas fa-home"></i> На главную
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div class="cart-content">
+            <!-- Левая колонка: Товары -->
+            <div class="cart-items">
+                {% for item in cart_data.items %}
+                <div class="cart-item" data-product-id="{{ item.product.id }}">
+                    <div class="item-image">
+                        {% if item.product.images.first %}
+                        <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/100x100/2d5a2d/ffffff?text=Товар" alt="{{ item.product.name }}">
+                        {% endif %}
+                    </div>
+
+                    <div class="item-details">
+                        <div class="item-header">
+                            <h4 class="item-title">{{ item.product.name }}</h4>
+                            <div class="item-price">{{ item.product.price }} ₽</div>
+                        </div>
+
+                        <div class="item-info">
+                            <div class="item-stock">
+                                <i class="fas fa-box"></i>
+                                {% if item.product.stock > 10 %}
+                                <span class="in-stock">В наличии</span>
+                                {% elif item.product.stock > 0 %}
+                                <span class="low-stock">Мало на складе ({{ item.product.stock }} шт.)</span>
+                                {% else %}
+                                <span class="out-stock">Нет в наличии</span>
+                                {% endif %}
+                            </div>
+
+                            {% if item.quantity > item.product.stock %}
+                            <div class="item-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Только {{ item.product.stock }} шт. на складе</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="item-controls">
+                            <div class="quantity-control">
+                                <button class="qty-btn minus" onclick="updateCartQuantity({{ item.product.id }}, -1)">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number"
+                                       class="qty-input"
+                                       value="{{ item.quantity }}"
+                                       min="1"
+                                       max="{{ item.product.stock }}"
+                                       onchange="updateCartQuantity({{ item.product.id }}, 0, this.value)">
+                                <button class="qty-btn plus" onclick="updateCartQuantity({{ item.product.id }}, 1)">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+
+                            <button class="btn-remove" onclick="removeFromCart({{ item.product.id }})">
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="item-subtotal">
+                        {{ item.subtotal }} ₽
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="cart-actions-bottom">
+                    <button class="btn-clear-cart" onclick="clearCart()">
+                        <i class="fas fa-trash-alt"></i> Очистить корзину
+                    </button>
+                    <a href="{% url 'catalog' %}" class="btn-continue-shopping">
+                        <i class="fas fa-arrow-left"></i> Продолжить покупки
+                    </a>
+                </div>
+            </div>
+
+            <!-- Правая колонка: Итого -->
+            <div class="cart-summary">
+                <div class="summary-header">
+                    <h3><i class="fas fa-receipt"></i> Итого</h3>
+                </div>
+
+                <div class="summary-details">
+                    <div class="summary-row">
+                        <span>Товары ({{ cart_data.total_items }} шт.)</span>
+                        <span>{{ cart_data.total_price }} ₽</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Доставка</span>
+                        <span>Бесплатно</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Налоги</span>
+                        <span>Включены</span>
+                    </div>
+
+                    <div class="summary-total">
+                        <span>Итого к оплате</span>
+                        <span class="total-price">{{ cart_data.total_price }} ₽</span>
+                    </div>
+                </div>
+
+                <div class="summary-actions">
+                    <button class="btn-checkout" onclick="proceedToCheckout()">
+                        <i class="fas fa-credit-card"></i> Оформить заказ
+                    </button>
+                    <div class="guest-note">
+                        <p><i class="fas fa-info-circle"></i> Заказ можно оформить без регистрации</p>
+                    </div>
+                </div>
+
+                <div class="summary-info">
+                    <div class="info-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Безопасная оплата</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-truck"></i>
+                        <span>Быстрая доставка</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-undo"></i>
+                        <span>Возврат в течение 14 дней</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'voentorg/js/cart.js' %}"></script>
 {% endblock %}
