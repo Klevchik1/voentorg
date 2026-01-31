@@ -21,23 +21,20 @@
 
             <div class="user-actions">
                 {% if user.is_authenticated %}
-                    <div class="user-dropdown">
-                        <a href="{% url 'profile' %}" class="user-profile">
-                            <i class="fas fa-user"></i> {{ user.username }}
-                            <i class="fas fa-chevron-down"></i>
-                        </a>
-                        <div class="dropdown-menu">
-                            <a href="{% url 'profile' %}"><i class="fas fa-user-circle"></i> Личный кабинет</a>
-                            <a href="{% url 'user_orders' %}"><i class="fas fa-history"></i> Мои заказы</a>
-                            <div class="divider"></div>
-                            <form action="{% url 'logout' %}" method="post" class="logout-form">
-                                {% csrf_token %}
-                                <button type="submit" class="dropdown-item">
-                                    <i class="fas fa-sign-out-alt"></i> Выйти
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                    <!-- Личный кабинет как ссылка -->
+                    <a href="{% url 'profile' %}" class="profile-btn">
+                        <i class="fas fa-user-circle"></i> Личный кабинет
+                    </a>
+
+                    <!-- Выход как псевдокнопка (ссылка с обработкой через JS) -->
+                    <a href="#" class="logout-btn" id="logout-link">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </a>
+
+                    <!-- Скрытая форма для выхода -->
+                    <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">
+                        {% csrf_token %}
+                    </form>
                 {% else %}
                     <a href="{% url 'login' %}" class="login-btn">
                         <i class="fas fa-sign-in-alt"></i> Войти
@@ -54,7 +51,6 @@
             </div>
         </div>
     </header>
-
     <nav>
         <div class="container nav-container">
             <ul class="nav-links">

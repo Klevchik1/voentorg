@@ -56,39 +56,119 @@ header {
 
 .user-actions {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     align-items: center;
 }
 
+/* Общие стили для всех элементов в user-actions */
 .user-actions a {
     color: white;
     text-decoration: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    transition: background-color 0.3s;
+    padding: 10px 18px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
+/* Эффект при наведении для всех кнопок */
 .user-actions a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    text-decoration: none;
 }
 
+/* Эффект при нажатии */
+.user-actions a:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Специфичные стили для каждой кнопки */
+.user-actions .profile-btn {
+    background: linear-gradient(135deg, #c9b037 0%, #d4b843 100%);
+    color: #1a3a1a;
+    border-color: #b89a30;
+}
+
+.user-actions .profile-btn:hover {
+    background: linear-gradient(135deg, #d4b843 0%, #e0c64f 100%);
+    border-color: #c9b037;
+}
+
+.user-actions .logout-btn {
+    background: linear-gradient(135deg, #e74c3c 0%, #ff6b5b 100%);
+    color: white;
+    border-color: #c0392b;
+}
+
+.user-actions .logout-btn:hover {
+    background: linear-gradient(135deg, #ff6b5b 0%, #ff8a7a 100%);
+    border-color: #e74c3c;
+}
+
+.user-actions .login-btn {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+    border-color: #219653;
+}
+
+.user-actions .login-btn:hover {
+    background: linear-gradient(135deg, #2ecc71 0%, #40d47e 100%);
+    border-color: #27ae60;
+}
+
+.user-actions .register-btn {
+    background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+    color: white;
+    border-color: #1c6ea4;
+}
+
+.user-actions .register-btn:hover {
+    background: linear-gradient(135deg, #3498db 0%, #4da7e7 100%);
+    border-color: #2980b9;
+}
+
+/* Корзина */
 .user-actions .cart {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+    border-color: #7d3c98;
     position: relative;
+}
+
+.user-actions .cart:hover {
+    background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    border-color: #8e44ad;
 }
 
 .cart-count {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: #e74c3c;
+    top: -8px;
+    right: -8px;
+    background-color: #ff4757;
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     font-size: 12px;
+    font-weight: 700;
     display: flex;
     justify-content: center;
     align-items: center;
+    border: 2px solid #1a3a1a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Скрытая форма */
+#logout-form {
+    display: none !important;
 }
 
 /* ===== НАВИГАЦИЯ ===== */
@@ -609,6 +689,17 @@ footer {
     .products-container {
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     }
+
+    .user-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .user-actions a {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
 }
 
 @media (max-width: 576px) {
@@ -624,112 +715,16 @@ footer {
         flex-direction: column;
     }
 
-    /* Стили для формы выхода */
-    .logout-form {
-        display: inline;
-        margin: 0;
-        padding: 0;
+    .user-actions {
+        gap: 8px;
     }
 
-    .btn-logout {
-        background: none;
-        border: none;
-        color: white;
-        cursor: pointer;
-        font-size: inherit;
-        font-family: inherit;
+    .user-actions a {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .user-actions .cart {
         padding: 8px 15px;
-        margin: 0;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        text-decoration: none;
-    }
-
-    .btn-logout:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        text-decoration: none;
-    }
-
-    /* Чтобы кнопка выглядела как ссылка из user-actions */
-    .user-actions .btn-logout {
-        color: white;
-        text-decoration: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-    }
-
-    /* Выпадающее меню пользователя */
-    .user-dropdown {
-        position: relative;
-        display: inline-block;
-    }
-
-    .user-dropdown .user-profile {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .dropdown-menu {
-        display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: white;
-        min-width: 200px;
-        border-radius: 6px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        z-index: 1000;
-        margin-top: 10px;
-        overflow: hidden;
-    }
-
-    .user-dropdown:hover .dropdown-menu {
-        display: block;
-    }
-
-    .dropdown-menu a,
-    .dropdown-menu .dropdown-item {
-        display: block;
-        padding: 12px 20px;
-        color: #333;
-        text-decoration: none;
-        border: none;
-        background: none;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 0.95rem;
-        transition: background-color 0.2s;
-    }
-
-    .dropdown-menu a:hover,
-    .dropdown-menu .dropdown-item:hover {
-        background-color: #f5f5f5;
-        color: #2d5a2d;
-    }
-
-    .dropdown-menu a i,
-    .dropdown-menu .dropdown-item i {
-        margin-right: 10px;
-        width: 16px;
-        text-align: center;
-    }
-
-    .dropdown-menu .divider {
-        height: 1px;
-        background-color: #eee;
-        margin: 8px 0;
-    }
-
-    .dropdown-menu .logout-form {
-        display: block;
-        padding: 0;
-        margin: 0;
     }
 }
