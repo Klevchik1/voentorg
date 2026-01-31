@@ -30,6 +30,7 @@ urlpatterns = [
     # Заказы
     path('order/create/', views.create_order, name='create_order'),
     path('order/guest/', views.guest_checkout, name='guest_checkout'),
+    path('orders/', views.user_orders, name='user_orders'),
 
     # Профиль
     path('profile/', views.profile, name='profile'),

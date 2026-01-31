@@ -1,0 +1,140 @@
+{% extends 'voentorg/base.html' %}
+{% load static %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'voentorg/css/checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <div class="checkout-header">
+        <h2><i class="fas fa-shopping-cart"></i> Оформление заказа</h2>
+        <div class="checkout-steps">
+            <div class="step active">
+                <span class="step-number">1</span>
+                <span class="step-text">Корзина</span>
+            </div>
+            <div class="step active">
+                <span class="step-number">2</span>
+                <span class="step-text">Данные покупателя</span>
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <span class="step-text">Подтверждение</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="checkout-content">
+        <!-- Левая колонка: Форма -->
+        <div class="checkout-form-section">
+            <h3><i class="fas fa-user"></i> Ваши данные</h3>
+            <p class="user-info-summary">
+                <strong>Пользователь:</strong> {{ user.get_full_name|default:user.username }}<br>
+                <strong>Email:</strong> {{ user.email }}<br>
+                {% if user.phone %}<strong>Телефон:</strong> {{ user.phone }}{% endif %}
+            </p>
+            
+            <form method="post" action="{% url 'create_order' %}">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="shipping_address">Адрес доставки *</label>
+                    <textarea id="shipping_address" name="shipping_address" 
+                              rows="3" required placeholder="Город, улица, дом, квартира"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact_phone">Контактный телефон *</label>
+                    <input type="tel" id="contact_phone" name="contact_phone" 
+                           value="{{ user.phone|default:'' }}"
+                           required placeholder="+7 (999) 123-45-67">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Комментарий к заказу</label>
+                    <textarea id="notes" name="notes" 
+                              rows="2" placeholder="Особые пожелания к доставке"></textarea>
+                </div>
+                
+                <div class="form-agreement">
+                    <input type="checkbox" id="agree_terms" name="agree_terms" required>
+                    <label for="agree_terms">
+                        Я согласен с <a href="#">условиями обработки персональных данных</a> 
+                        и <a href="#">правилами возврата товара</a>
+                    </label>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="{% url 'cart' %}" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Вернуться в корзину
+                    </a>
+                    <button type="submit" class="btn-submit-order">
+                        <i class="fas fa-credit-card"></i> Подтвердить заказ
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Правая колонка: Сводка заказа -->
+        <div class="order-summary-section">
+            <h3><i class="fas fa-receipt"></i> Ваш заказ</h3>
+            
+            <div class="order-items">
+                {% for item in cart.items.all %}
+                <div class="order-item">
+                    <div class="item-image">
+                        {% if item.product.images.first %}
+                        <img src="{{ item.product.images.first.image.url }}" alt="{{ item.product.name }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/60x60/2d5a2d/ffffff?text=Товар" alt="{{ item.product.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="item-details">
+                        <div class="item-name">{{ item.product.name }}</div>
+                        <div class="item-quantity">{{ item.quantity }} × {{ item.product.price }} ₽</div>
+                    </div>
+                    <div class="item-subtotal">{{ item.total_price }} ₽</div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Товары ({{ cart.total_items }} шт.)</span>
+                    <span>{{ cart.total_price }} ₽</span>
+                </div>
+                <div class="summary-row">
+                    <span>Доставка</span>
+                    <span>Бесплатно</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Итого к оплате</span>
+                    <span>{{ cart.total_price }} ₽</span>
+                </div>
+            </div>
+            
+            <div class="order-info">
+                <div class="info-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Безопасная оплата</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-lock"></i>
+                    <span>Ваши данные защищены</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-headset"></i>
+                    <span>Поддержка 24/7</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'voentorg/js/checkout.js' %}"></script>
+{% endblock %}

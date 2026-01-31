@@ -108,21 +108,41 @@ def product_detail(request, product_id):
 # Регистрация
 def register(request):
     """Регистрация нового пользователя"""
+    if request.user.is_authenticated:
+        messages.info(request, 'Вы уже вошли в систему')
+        return redirect('home')
+
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
+
+        # Проверяем согласие с условиями
+        agree_terms = request.POST.get('agree_terms')
+        if not agree_terms:
+            messages.error(request, 'Необходимо согласиться с условиями использования')
+        elif form.is_valid():
             user = form.save()
 
             # Объединяем сессионную корзину с корзиной пользователя
             merge_session_cart_with_user(request, user)
 
+            # Авторизуем пользователя
             login(request, user)
-            messages.success(request, 'Регистрация прошла успешно!')
-            return redirect('home')
+
+            # Создаем корзину для пользователя
+            Cart.objects.get_or_create(user=user)
+
+            messages.success(request, f'Добро пожаловать, {user.username}! Регистрация прошла успешно.')
+
+            # Перенаправляем на главную или профиль
+            next_url = request.GET.get('next', 'profile')
+            return redirect(next_url)
     else:
         form = CustomUserCreationForm()
 
-    context = {'form': form, 'title': 'Регистрация'}
+    context = {
+        'form': form,
+        'title': 'Регистрация'
+    }
     return render(request, 'voentorg/register.html', context)
 
 
@@ -462,19 +482,34 @@ def clear_cart(request):
 
 @login_required
 def user_orders(request):
-    """Список заказов пользователя (заглушка)"""
-    context = {'title': 'Мои заказы'}
+    """Список заказов пользователя"""
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+
+    context = {
+        'orders': orders,
+        'title': 'Мои заказы'
+    }
     return render(request, 'voentorg/orders.html', context)
 
 
 # Создание заказа (оформление покупки)
 def create_order(request):
-    """Создание заказа - перенаправление на соответствующую страницу"""
+    """Создание заказа из корзины"""
     if not request.user.is_authenticated:
-        # Для гостей
+        # Для гостей перенаправляем на guest_checkout
         return redirect('guest_checkout')
 
     # Для авторизованных пользователей
+    if request.method == 'POST':
+        # Обработка оформления заказа
+        return process_user_order(request)
+    else:
+        # Показываем форму оформления
+        return show_user_checkout_form(request)
+
+
+def show_user_checkout_form(request):
+    """Показать форму оформления заказа для авторизованных"""
     try:
         cart_obj = Cart.objects.get(user=request.user)
 
@@ -488,12 +523,65 @@ def create_order(request):
                 messages.error(request, f'Товар "{item.product.name}" недоступен')
                 return redirect('cart')
 
-        # Перенаправляем на страницу оформления для авторизованных
-        return render(request, 'voentorg/user_checkout.html', {
+        context = {
             'cart': cart_obj,
-            'title': 'Оформление заказа'
-        })
+            'title': 'Оформление заказа',
+            'user': request.user
+        }
+        return render(request, 'voentorg/user_checkout.html', context)
 
+    except Cart.DoesNotExist:
+        messages.error(request, 'Корзина пуста')
+        return redirect('cart')
+
+
+def process_user_order(request):
+    """Обработка заказа для авторизованного пользователя"""
+    try:
+        cart_obj = Cart.objects.get(user=request.user)
+
+        if cart_obj.total_items == 0:
+            messages.error(request, 'Корзина пуста')
+            return redirect('cart')
+
+        # Получаем данные из формы
+        shipping_address = request.POST.get('shipping_address', '').strip()
+        contact_phone = request.POST.get('contact_phone', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        agree_terms = request.POST.get('agree_terms')
+
+        # Валидация
+        if not shipping_address:
+            messages.error(request, 'Введите адрес доставки')
+            return redirect('create_order')
+
+        if not contact_phone:
+            messages.error(request, 'Введите контактный телефон')
+            return redirect('create_order')
+
+        if not agree_terms:
+            messages.error(request, 'Необходимо согласиться с условиями')
+            return redirect('create_order')
+
+        # Проверяем наличие товаров
+        for item in cart_obj.items.all():
+            if not item.product.is_available or item.product.stock < item.quantity:
+                messages.error(request, f'Товар "{item.product.name}" недоступен или недостаточно на складе')
+                return redirect('cart')
+
+        # Создаем заказ
+        order = cart_obj.create_order(
+            shipping_address=shipping_address,
+            contact_phone=contact_phone,
+            notes=notes
+        )
+
+        messages.success(request, f'Заказ #{order.id} успешно оформлен!')
+        return redirect('profile')
+
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('cart')
     except Cart.DoesNotExist:
         messages.error(request, 'Корзина пуста')
         return redirect('cart')

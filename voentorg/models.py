@@ -35,12 +35,13 @@ class CustomUser(AbstractUser):
         verbose_name='Фамилия'
     )
     phone = models.CharField(
-        max_length=15,
+        max_length=20,
         blank=True,
+        null=True,
         validators=[
             RegexValidator(
-                regex='^[0-9+()-]{7,20}$',
-                message='Номер телефона должен содержать от 7 до 20 цифр и символов +()-'
+                regex='^[0-9+\-()\s]{7,30}$',
+                message='Номер телефона должен содержать от 7 до 30 цифр и символов +()- и пробелов'
             )
         ],
         verbose_name='Телефон'
@@ -548,12 +549,12 @@ class Order(models.Model):
         verbose_name='Адрес доставки'
     )
     contact_phone = models.CharField(
-        max_length=15,
+        max_length=20,
         blank=True,
         validators=[
             RegexValidator(
-                regex='^[0-9+()-]{7,20}$',
-                message='Номер телефона должен содержать от 7 до 20 цифр и символов +()-'
+                regex='^[0-9+\-()\s]{7,30}$',
+                message='Номер телефона должен содержать от 7 до 30 цифр и символов +()- и пробелов'
             )
         ],
         verbose_name='Контактный телефон'

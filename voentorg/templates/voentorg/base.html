@@ -21,12 +21,23 @@
 
             <div class="user-actions">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'profile' %}" class="user-profile">
-                        <i class="fas fa-user"></i> {{ user.username }}
-                    </a>
-                    <a href="{% url 'logout' %}" class="login-btn logout-link">
-                        <i class="fas fa-sign-out-alt"></i> Выйти
-                    </a>
+                    <div class="user-dropdown">
+                        <a href="{% url 'profile' %}" class="user-profile">
+                            <i class="fas fa-user"></i> {{ user.username }}
+                            <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{% url 'profile' %}"><i class="fas fa-user-circle"></i> Личный кабинет</a>
+                            <a href="{% url 'user_orders' %}"><i class="fas fa-history"></i> Мои заказы</a>
+                            <div class="divider"></div>
+                            <form action="{% url 'logout' %}" method="post" class="logout-form">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt"></i> Выйти
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 {% else %}
                     <a href="{% url 'login' %}" class="login-btn">
                         <i class="fas fa-sign-in-alt"></i> Войти

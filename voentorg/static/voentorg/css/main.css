@@ -661,4 +661,75 @@ footer {
         border-radius: 4px;
         transition: background-color 0.3s;
     }
+
+    /* Выпадающее меню пользователя */
+    .user-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .user-dropdown .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: white;
+        min-width: 200px;
+        border-radius: 6px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        z-index: 1000;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+
+    .user-dropdown:hover .dropdown-menu {
+        display: block;
+    }
+
+    .dropdown-menu a,
+    .dropdown-menu .dropdown-item {
+        display: block;
+        padding: 12px 20px;
+        color: #333;
+        text-decoration: none;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.95rem;
+        transition: background-color 0.2s;
+    }
+
+    .dropdown-menu a:hover,
+    .dropdown-menu .dropdown-item:hover {
+        background-color: #f5f5f5;
+        color: #2d5a2d;
+    }
+
+    .dropdown-menu a i,
+    .dropdown-menu .dropdown-item i {
+        margin-right: 10px;
+        width: 16px;
+        text-align: center;
+    }
+
+    .dropdown-menu .divider {
+        height: 1px;
+        background-color: #eee;
+        margin: 8px 0;
+    }
+
+    .dropdown-menu .logout-form {
+        display: block;
+        padding: 0;
+        margin: 0;
+    }
 }

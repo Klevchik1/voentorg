@@ -1,0 +1,202 @@
+{% extends 'voentorg/base.html' %}
+{% load static %}
+
+{% block title %}Мои заказы{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <h2><i class="fas fa-history"></i> Мои заказы</h2>
+    
+    {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <h3>Заказ #{{ order.id }}</h3>
+                    <span class="order-date">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <div class="order-status">
+                    <span class="status-badge status-{{ order.status.code }}">
+                        {{ order.status.name }}
+                    </span>
+                </div>
+                
+                <div class="order-details">
+                    <div class="detail">
+                        <span class="label">Товаров:</span>
+                        <span class="value">{{ order.total_items }} шт.</span>
+                    </div>
+                    <div class="detail">
+                        <span class="label">Сумма:</span>
+                        <span class="value">{{ order.total_amount }} ₽</span>
+                    </div>
+                </div>
+                
+                <div class="order-actions">
+                    <a href="#" class="btn-view">Подробнее</a>
+                    <a href="#" class="btn-receipt">
+                        <i class="fas fa-download"></i> Скачать чек
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-orders">
+            <i class="fas fa-shopping-cart fa-3x"></i>
+            <h3>Заказов пока нет</h3>
+            <p>Вы еще ничего не заказывали в нашем магазине</p>
+            <a href="{% url 'catalog' %}" class="btn-browse">
+                <i class="fas fa-shopping-bag"></i> Перейти в каталог
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.orders-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.order-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border-left: 4px solid #2d5a2d;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.order-header h3 {
+    color: #1a3a1a;
+    margin: 0;
+}
+
+.order-date {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.order-status {
+    margin-bottom: 15px;
+}
+
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-new { background-color: #d4edda; color: #155724; }
+.status-processing { background-color: #d1ecf1; color: #0c5460; }
+.status-shipped { background-color: #fff3cd; color: #856404; }
+.status-delivered { background-color: #c3e6cb; color: #155724; }
+.status-cancelled { background-color: #f8d7da; color: #721c24; }
+
+.order-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.detail {
+    text-align: center;
+}
+
+.label {
+    display: block;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.value {
+    font-weight: 600;
+    color: #333;
+}
+
+.order-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-view, .btn-receipt {
+    padding: 8px 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.btn-view {
+    background-color: #2d5a2d;
+    color: white;
+}
+
+.btn-view:hover {
+    background-color: #1a3a1a;
+}
+
+.btn-receipt {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.btn-receipt:hover {
+    background-color: #e0e0e0;
+}
+
+.no-orders {
+    text-align: center;
+    padding: 60px 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.no-orders i {
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.no-orders h3 {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.no-orders p {
+    color: #999;
+    margin-bottom: 25px;
+}
+
+.btn-browse {
+    display: inline-block;
+    padding: 12px 25px;
+    background-color: #2d5a2d;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-browse:hover {
+    background-color: #1a3a1a;
+}
+</style>
+{% endblock %}
