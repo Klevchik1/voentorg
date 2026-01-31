@@ -297,9 +297,21 @@ def remove_from_cart(request, product_id):
                 cart_obj = Cart.objects.get(user=request.user)
                 cart_item = CartItem.objects.get(cart=cart_obj, product=product)
                 cart_item.delete()
+
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Товар "{product.name}" удален из корзины'
+                    })
                 messages.success(request, f'Товар "{product.name}" удален из корзины')
+
             except (Cart.DoesNotExist, CartItem.DoesNotExist):
-                pass
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Товар не найден в корзине'
+                    })
+                messages.error(request, 'Товар не найден в корзине')
 
         else:
             # Для неавторизованных пользователей
@@ -307,12 +319,34 @@ def remove_from_cart(request, product_id):
             if str(product_id) in session_cart:
                 del session_cart[str(product_id)]
                 save_session_cart(request, session_cart)
+
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Товар "{product.name}" удален из корзины'
+                    })
                 messages.success(request, f'Товар "{product.name}" удален из корзины')
+            else:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Товар не найден в корзине'
+                    })
+                messages.error(request, 'Товар не найден в корзине')
 
     except Product.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': 'Товар не найден'
+            })
         messages.error(request, 'Товар не найден')
 
-    return redirect('cart')
+    # Если это не AJAX запрос, перенаправляем обратно
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return redirect('cart')
+    else:
+        return JsonResponse({'success': False, 'message': 'Неизвестная ошибка'})
 
 
 # Обновление количества товара в корзине
@@ -383,15 +417,37 @@ def clear_cart(request):
         try:
             cart_obj = Cart.objects.get(user=request.user)
             cart_obj.items.all().delete()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Корзина очищена'
+                })
             messages.success(request, 'Корзина очищена')
+
         except Cart.DoesNotExist:
-            pass
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Корзина не найдена'
+                })
+            messages.error(request, 'Корзина не найдена')
     else:
         request.session['cart'] = '{}'
         request.session.modified = True
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Корзина очищена'
+            })
         messages.success(request, 'Корзина очищена')
 
-    return redirect('cart')
+    # Если это не AJAX запрос, перенаправляем обратно
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return redirect('cart')
+    else:
+        return JsonResponse({'success': False, 'message': 'Неизвестная ошибка'})
 
 
 @login_required

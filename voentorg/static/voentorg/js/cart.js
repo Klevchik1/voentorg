@@ -46,16 +46,16 @@ function updateCartQuantity(productId, delta, newQuantity = null) {
         }
     })
     .then(response => {
-        if (response.ok) {
-            return response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        throw new Error('Network response was not ok');
+        return response.json();
     })
     .then(data => {
         if (data.success) {
             // Обновляем интерфейс
             updateCartUI();
-            showNotification('Корзина обновлена', 'success');
+            showNotification(data.message || 'Корзина обновлена', 'success');
         } else {
             showNotification(data.message || 'Ошибка при обновлении корзины', 'error');
         }
@@ -82,18 +82,18 @@ function removeFromCart(productId) {
         }
     })
     .then(response => {
-        if (response.ok) {
-            return response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        throw new Error('Network response was not ok');
+        return response.json();
     })
     .then(data => {
         if (data.success) {
             // Обновляем интерфейс
             updateCartUI();
-            showNotification('Товар удален из корзины', 'success');
+            showNotification(data.message || 'Товар удален из корзины', 'success');
         } else {
-            showNotification('Ошибка при удалении товара', 'error');
+            showNotification(data.message || 'Ошибка при удалении товара', 'error');
         }
     })
     .catch(error => {
@@ -118,16 +118,16 @@ function clearCart() {
         }
     })
     .then(response => {
-        if (response.ok) {
-            return response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        throw new Error('Network response was not ok');
+        return response.json();
     })
     .then(data => {
         if (data.success) {
             location.reload();
         } else {
-            showNotification('Ошибка при очистке корзины', 'error');
+            showNotification(data.message || 'Ошибка при очистке корзины', 'error');
         }
     })
     .catch(error => {
@@ -153,8 +153,21 @@ function updateCartUI() {
     // Обновляем счетчик корзины в хедере
     updateCartCount();
 
-    // Обновляем общую стоимость и количество
-    location.reload(); // Простой вариант
+    // Перезагружаем страницу для обновления данных
+    // Можно заменить на более сложную логику обновления без перезагрузки
+    fetch('/cart/')
+        .then(response => response.text())
+        .then(html => {
+            // Можно обновить только часть страницы без полной перезагрузки
+            // Но для простоты используем перезагрузку
+            setTimeout(() => {
+                location.reload();
+            }, 500); // Небольшая задержка для показа уведомления
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            location.reload();
+        });
 }
 
 function updateCartCount() {
