@@ -103,7 +103,7 @@
                 <div class="order-item">
                     <div class="item-image">
                         {% if item.product.images.first %}
-                        <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}">
+                        <img src="{{ item.product.images.first.image.url }}" alt="{{ item.product.name }}">
                         {% else %}
                         <img src="https://via.placeholder.com/60x60/2d5a2d/ffffff?text=Товар" alt="{{ item.product.name }}">
                         {% endif %}

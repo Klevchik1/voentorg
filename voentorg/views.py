@@ -498,9 +498,64 @@ def guest_checkout(request):
         return redirect('cart')
 
     if request.method == 'POST':
-        # Обработка оформления заказа для гостя
-        return process_guest_order(request, cart_data)
+        # Обработка POST запроса (оформление заказа)
+        try:
+            # Получаем данные из формы
+            email = request.POST.get('email', '').strip()
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            shipping_address = request.POST.get('shipping_address', '').strip()
+            notes = request.POST.get('notes', '').strip()
 
+            if not email:
+                messages.error(request, 'Введите email для связи')
+                return redirect('guest_checkout')
+
+            # Проверяем наличие товаров на складе
+            for item in cart_data['items']:
+                product = item['product']
+                if not product.is_available or product.stock < item['quantity']:
+                    messages.error(request, f'Товар "{product.name}" недоступен или недостаточно на складе')
+                    return redirect('cart')
+
+            # Создаем заказ
+            order = Order.objects.create(
+                user=None,
+                status=OrderStatus.get_default_status(),
+                total_amount=cart_data['total_price'],
+                shipping_address=shipping_address,
+                contact_phone=phone,
+                notes=notes,
+                guest_email=email,
+                guest_name=f"{first_name} {last_name}".strip()
+            )
+
+            # Создаем элементы заказа
+            for item in cart_data['items']:
+                product = item['product']
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=item['quantity'],
+                    price=product.price,
+                    subtotal=item['subtotal']
+                )
+                # Уменьшаем количество на складе
+                product.decrease_stock(item['quantity'])
+
+            # Очищаем сессионную корзину
+            request.session['cart'] = '{}'
+            request.session.modified = True
+
+            messages.success(request, f'Заказ #{order.id} успешно оформлен! Детали отправлены на {email}')
+            return redirect('home')
+
+        except Exception as e:
+            messages.error(request, f'Ошибка при оформлении заказа: {str(e)}')
+            return redirect('guest_checkout')
+
+    # GET запрос - показываем форму
     context = {
         'cart_data': cart_data,
         'title': 'Оформление заказа (Гость)'
@@ -508,56 +563,74 @@ def guest_checkout(request):
     return render(request, 'voentorg/guest_checkout.html', context)
 
 
-def process_guest_order(request, cart_data):
+def process_guest_order(request, cart_data=None):
     """Обработка заказа гостя"""
-    try:
-        # Создаем временного пользователя или заказ без пользователя
-        # Для простоты создадим заказ с временным email
-        email = request.POST.get('email', '')
-        first_name = request.POST.get('first_name', '')
-        last_name = request.POST.get('last_name', '')
-        phone = request.POST.get('phone', '')
-        shipping_address = request.POST.get('shipping_address', '')
-        notes = request.POST.get('notes', '')
+    if cart_data is None:
+        cart_data = get_cart_data(request)
 
-        if not email:
-            messages.error(request, 'Введите email для связи')
+    if not cart_data['items']:
+        messages.error(request, 'Корзина пуста')
+        return redirect('cart')
+
+    if request.method == 'POST':
+        try:
+            # Получаем данные из формы
+            email = request.POST.get('email', '').strip()
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            shipping_address = request.POST.get('shipping_address', '').strip()
+            notes = request.POST.get('notes', '').strip()
+
+            if not email:
+                messages.error(request, 'Введите email для связи')
+                return redirect('guest_checkout')
+
+            # Проверяем наличие товаров на складе
+            for item in cart_data['items']:
+                product = item['product']  # Это объект Product
+                if not product.is_available or product.stock < item['quantity']:
+                    messages.error(request, f'Товар "{product.name}" недоступен или недостаточно на складе')
+                    return redirect('cart')
+
+            # Создаем заказ без привязки к пользователю
+            order = Order.objects.create(
+                user=None,  # Заказ без пользователя
+                status=OrderStatus.get_default_status(),
+                total_amount=cart_data['total_price'],
+                shipping_address=shipping_address,
+                contact_phone=phone,
+                notes=notes,
+                guest_email=email,
+                guest_name=f"{first_name} {last_name}".strip()
+            )
+
+            # Создаем элементы заказа
+            for item in cart_data['items']:
+                product = item['product']
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=item['quantity'],
+                    price=product.price,
+                    subtotal=item['subtotal']
+                )
+                # Уменьшаем количество на складе
+                product.decrease_stock(item['quantity'])
+
+            # Очищаем сессионную корзину
+            request.session['cart'] = '{}'
+            request.session.modified = True
+
+            messages.success(request,
+                             f'Заказ #{order.id} успешно оформлен! Номер для отслеживания отправлен на {email}')
+            return redirect('home')
+
+        except Exception as e:
+            messages.error(request, f'Ошибка при оформлении заказа: {str(e)}')
             return redirect('guest_checkout')
 
-        # Создаем заказ без привязки к пользователю
-        order = Order.objects.create(
-            user=None,  # Заказ без пользователя
-            status=OrderStatus.get_default_status(),
-            total_amount=cart_data['total_price'],
-            shipping_address=shipping_address,
-            contact_phone=phone,
-            notes=notes,
-            guest_email=email,
-            guest_name=f"{first_name} {last_name}".strip()
-        )
-
-        # Создаем элементы заказа
-        for item in cart_data['items']:
-            OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                quantity=item.quantity,
-                price=item.product.price,
-                subtotal=item.subtotal
-            )
-            # Уменьшаем количество на складе
-            item.product.decrease_stock(item.quantity)
-
-        # Очищаем сессионную корзину
-        request.session['cart'] = '{}'
-        request.session.modified = True
-
-        messages.success(request, f'Заказ #{order.id} успешно оформлен! Номер для отслеживания отправлен на {email}')
-        return redirect('home')
-
-    except Exception as e:
-        messages.error(request, f'Ошибка при оформлении заказа: {str(e)}')
-        return redirect('guest_checkout')
+    return guest_checkout(request)
 
 
 def get_session_cart(request):
@@ -619,7 +692,7 @@ def get_cart_data(request):
 
         for cart_item in cart.items.all():
             items.append({
-                'product': cart_item.product,
+                'product': cart_item.product,  # Это объект Product
                 'quantity': cart_item.quantity,
                 'subtotal': cart_item.total_price
             })
@@ -644,7 +717,7 @@ def get_cart_data(request):
                 product = Product.objects.get(id=product_id)
                 subtotal = product.price * quantity
                 items.append({
-                    'product': product,
+                    'product': product,  # Это объект Product
                     'quantity': quantity,
                     'subtotal': subtotal
                 })
