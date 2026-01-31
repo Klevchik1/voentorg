@@ -9,6 +9,8 @@ from django.http import JsonResponse, HttpResponseRedirect
 from .models import Product, Category, Cart, CartItem, Order, OrderItem, OrderStatus
 from .forms import CustomUserCreationForm
 from django.db import models
+from django.contrib.auth import logout as auth_logout
+from django.views.decorators.http import require_http_methods
 
 
 # Главная страница
@@ -137,6 +139,14 @@ class CustomLoginView(auth_views.LoginView):
         merge_session_cart_with_user(self.request, self.request.user)
 
         return response
+
+
+@require_http_methods(["GET", "POST"])
+def custom_logout(request):
+    """Кастомный выход с поддержкой GET запросов"""
+    auth_logout(request)
+    messages.success(request, 'Вы успешно вышли из системы')
+    return redirect('home')
 
 
 # Профиль пользователя

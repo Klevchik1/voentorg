@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Инициализация поиска
     initializeSearch();
+
+    initializeLogout();
 });
 
 // ===== ФУНКЦИИ КОРЗИНЫ =====
@@ -358,6 +360,37 @@ if (!document.querySelector('#notification-styles')) {
         }
     `;
     document.head.appendChild(style);
+}
+
+function initializeLogout() {
+    // Находим ссылку выхода
+    const logoutLinks = document.querySelectorAll('.logout-link, a[href*="logout"]');
+
+    logoutLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            performLogout(this.href);
+        });
+    });
+}
+
+function performLogout(logoutUrl) {
+    // Создаем форму для POST запроса
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = logoutUrl;
+    form.style.display = 'none';
+
+    // Добавляем CSRF токен
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = getCsrfToken();
+    form.appendChild(csrfInput);
+
+    // Добавляем форму в документ и отправляем
+    document.body.appendChild(form);
+    form.submit();
 }
 
 // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
