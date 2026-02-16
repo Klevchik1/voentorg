@@ -90,7 +90,7 @@ function initializeAddToCart() {
         const productPrice = parseFloat(document.querySelector('.price')?.textContent?.replace(/[^\d.]/g, '') || 0);
 
         // Добавляем в корзину (временная реализация через localStorage)
-        addProductToCart(productId, productName, productPrice, quantity);
+        // addProductToCart(productId, productName, productPrice, quantity);
 
         // Показываем уведомление
         showNotification(`Добавлено ${quantity} шт. в корзину`, 'success');
@@ -101,29 +101,29 @@ function initializeAddToCart() {
 }
 
 // Добавление товара в корзину
-function addProductToCart(productId, productName, productPrice, quantity) {
-    let cart = JSON.parse(localStorage.getItem('voentorg_cart') || '[]');
-
-    // Проверяем, есть ли товар уже в корзине
-    const existingItemIndex = cart.findIndex(item => item.id == productId);
-
-    if (existingItemIndex !== -1) {
-        // Увеличиваем количество
-        cart[existingItemIndex].quantity += quantity;
-    } else {
-        // Добавляем новый товар
-        cart.push({
-            id: productId,
-            name: productName,
-            price: productPrice,
-            quantity: quantity,
-            addedAt: new Date().toISOString()
-        });
-    }
-
-    // Сохраняем корзину
-    localStorage.setItem('voentorg_cart', JSON.stringify(cart));
-}
+// function addProductToCart(productId, productName, productPrice, quantity) {
+//     let cart = JSON.parse(localStorage.getItem('voentorg_cart') || '[]');
+//
+//     // Проверяем, есть ли товар уже в корзине
+//     const existingItemIndex = cart.findIndex(item => item.id == productId);
+//
+//     if (existingItemIndex !== -1) {
+//         // Увеличиваем количество
+//         cart[existingItemIndex].quantity += quantity;
+//     } else {
+//         // Добавляем новый товар
+//         cart.push({
+//             id: productId,
+//             name: productName,
+//             price: productPrice,
+//             quantity: quantity,
+//             addedAt: new Date().toISOString()
+//         });
+//     }
+//
+//     // Сохраняем корзину
+//     localStorage.setItem('voentorg_cart', JSON.stringify(cart));
+// }
 
 // Обновление счетчика корзины
 function updateCartCount() {

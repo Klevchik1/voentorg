@@ -833,31 +833,41 @@ def get_cart_data(request):
 
 
 # ===== AJAX ФУНКЦИИ =====
-
 def ajax_add_to_cart(request, product_id):
-    """Добавление в корзину через AJAX"""
+    """Добавление в корзину через AJAX (замена количества)"""
     if request.method == 'POST':
         try:
             product = Product.objects.get(id=product_id, is_available=True)
+            # Получаем количество из POST запроса, по умолчанию 1
+            new_quantity = int(request.POST.get('quantity', 1))
+
+            if new_quantity <= 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Количество должно быть положительным'
+                })
+
+            if new_quantity > product.stock:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Достигнуто максимальное количество товара "{product.name}" на складе'
+                })
 
             if request.user.is_authenticated:
                 # Для авторизованных пользователей
                 cart_obj, created = Cart.objects.get_or_create(user=request.user)
-                cart_item, item_created = CartItem.objects.get_or_create(
+
+                # Проверяем, есть ли уже такой товар в корзине
+                cart_item, created = CartItem.objects.get_or_create(
                     cart=cart_obj,
                     product=product,
-                    defaults={'quantity': 1}
+                    defaults={'quantity': new_quantity}
                 )
 
-                if not item_created:
-                    if cart_item.quantity < product.stock:
-                        cart_item.quantity += 1
-                        cart_item.save()
-                    else:
-                        return JsonResponse({
-                            'success': False,
-                            'message': f'Достигнуто максимальное количество товара "{product.name}" на складе'
-                        })
+                if not created:
+                    # Если товар уже есть, заменяем количество на указанное
+                    cart_item.quantity = new_quantity
+                    cart_item.save()
 
                 return JsonResponse({
                     'success': True,
@@ -867,29 +877,26 @@ def ajax_add_to_cart(request, product_id):
             else:
                 # Для неавторизованных пользователей
                 session_cart = get_session_cart(request)
-                quantity = session_cart.get(str(product_id), 0)
+                session_cart[str(product_id)] = new_quantity
+                save_session_cart(request, session_cart)
 
-                if quantity < product.stock:
-                    session_cart[str(product_id)] = quantity + 1
-                    save_session_cart(request, session_cart)
-                    return JsonResponse({
-                        'success': True,
-                        'message': f'Товар "{product.name}" добавлен в корзину'
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Достигнуто максимальное количество товара "{product.name}" на складе'
-                    })
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Товар "{product.name}" добавлен в корзину'
+                })
 
         except Product.DoesNotExist:
             return JsonResponse({
                 'success': False,
                 'message': 'Товар не найден'
             })
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Некорректное количество'
+            })
 
     return JsonResponse({'success': False, 'message': 'Неверный метод запроса'})
-
 
 def get_cart_count(request):
     """Получить количество товаров в корзине (для AJAX)"""

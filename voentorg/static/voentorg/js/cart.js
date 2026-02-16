@@ -1,7 +1,9 @@
 // ===== КОРЗИНА - JAVASCRIPT =====
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Cart.js initialized');
     initializeCart();
+    initializeAddToCartButtons();
 });
 
 function initializeCart() {
@@ -14,6 +16,95 @@ function initializeCart() {
                 updateCartQuantity(productId, 0, parseInt(this.value));
             }
         });
+    });
+}
+
+function initializeAddToCartButtons() {
+    console.log('Initializing add to cart buttons');
+
+    // Находим все кнопки добавления в корзину
+    const addToCartButtons = document.querySelectorAll('.btn-add-to-cart');
+
+    console.log('Found buttons:', addToCartButtons.length);
+
+    // Удаляем старые обработчики
+    addToCartButtons.forEach(button => {
+        // Создаем копию кнопки без обработчиков
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+
+        // Добавляем новый обработчик к скопированной кнопке
+        newButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            console.log('Add to cart clicked');
+
+            const productId = this.getAttribute('data-product');
+            console.log('Product ID:', productId);
+
+            if (!productId) {
+                console.error('Product ID not found');
+                return;
+            }
+
+            // Получаем количество
+            let quantity = 1;
+            const quantityInput = document.getElementById('quantity');
+            if (quantityInput) {
+                quantity = parseInt(quantityInput.value) || 1;
+                console.log('Quantity from input:', quantity);
+            }
+
+            addToCart(productId, quantity);
+        });
+    });
+}
+
+function addToCart(productId, quantity = 1) {
+    console.log('=== addToCart called ===');
+    console.log('Product ID:', productId);
+    console.log('Quantity:', quantity);
+
+    const formData = new FormData();
+    formData.append('quantity', quantity);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+
+    fetch(`/cart/ajax_add/${productId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            updateCartCount();
+            showNotification(data.message || 'Товар добавлен в корзину', 'success');
+
+            // Блокируем кнопку на 1 секунду чтобы предотвратить повторные клики
+            const button = document.querySelector(`.btn-add-to-cart[data-product="${productId}"]`);
+            if (button) {
+                button.disabled = true;
+                setTimeout(() => {
+                    button.disabled = false;
+                }, 1000);
+            }
+        } else {
+            showNotification(data.message || 'Ошибка при добавлении в корзину', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error in fetch:', error);
+        showNotification('Ошибка при добавлении в корзину', 'error');
     });
 }
 
@@ -53,7 +144,6 @@ function updateCartQuantity(productId, delta, newQuantity = null) {
     })
     .then(data => {
         if (data.success) {
-            // Обновляем интерфейс
             updateCartUI();
             showNotification(data.message || 'Корзина обновлена', 'success');
         } else {
@@ -89,7 +179,6 @@ function removeFromCart(productId) {
     })
     .then(data => {
         if (data.success) {
-            // Обновляем интерфейс
             updateCartUI();
             showNotification(data.message || 'Товар удален из корзины', 'success');
         } else {
@@ -140,29 +229,14 @@ function proceedToCheckout() {
     window.location.href = "/order/create/";
 }
 
-function guestCheckout() {
-    // Реализация оформления заказа для гостя
-    showNotification('Функция оформления заказа для гостей в разработке', 'info');
-    // Временная реализация - предлагаем зарегистрироваться
-    if (confirm('Для оформления заказа необходимо войти в систему. Перейти к регистрации?')) {
-        window.location.href = "/register/";
-    }
-}
-
 function updateCartUI() {
-    // Обновляем счетчик корзины в хедере
     updateCartCount();
-
-    // Перезагружаем страницу для обновления данных
-    // Можно заменить на более сложную логику обновления без перезагрузки
     fetch('/cart/')
         .then(response => response.text())
         .then(html => {
-            // Можно обновить только часть страницы без полной перезагрузки
-            // Но для простоты используем перезагрузку
             setTimeout(() => {
                 location.reload();
-            }, 500); // Небольшая задержка для показа уведомления
+            }, 500);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -171,7 +245,6 @@ function updateCartUI() {
 }
 
 function updateCartCount() {
-    // Обновление счетчика в хедере через AJAX
     fetch('/cart/get_count/', {
         method: 'GET',
         headers: {
@@ -191,7 +264,6 @@ function updateCartCount() {
 }
 
 function getCsrfToken() {
-    // Ищем CSRF токен в cookies
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
@@ -207,7 +279,6 @@ function getCsrfToken() {
 }
 
 function showNotification(message, type = 'info') {
-    // Создаем элемент уведомления
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
@@ -215,7 +286,6 @@ function showNotification(message, type = 'info') {
         <span>${message}</span>
     `;
 
-    // Добавляем стили
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -233,10 +303,8 @@ function showNotification(message, type = 'info') {
         animation: slideIn 0.3s ease-out;
     `;
 
-    // Добавляем в body
     document.body.appendChild(notification);
 
-    // Удаляем через 3 секунды
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(() => {
@@ -247,7 +315,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Добавляем анимации для уведомлений, если их еще нет
+// Добавляем анимации для уведомлений
 if (!document.querySelector('#notification-styles')) {
     const style = document.createElement('style');
     style.id = 'notification-styles';
