@@ -1,11 +1,168 @@
+<!-- voentorg/templates/voentorg/contacts.html -->
 {% extends 'voentorg/base.html' %}
+{% load static %}
 
-{% block title %}Каталог товаров{% endblock %}
+{% block title %}Контакты - Военторг{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'voentorg/css/main.css' %}">
+<link rel="stylesheet" href="{% static 'voentorg/css/contacts.css' %}">
+{% endblock %}
 
 {% block content %}
-<h2>Каталог товаров</h2>
-<p>Страница каталога находится в разработке.</p>
-<a href="{% url 'home' %}" class="btn btn-primary">
-    <i class="fas fa-arrow-left"></i> Вернуться на главную
-</a>
+<div class="contacts-container">
+    <div class="contacts-header">
+        <h1>Контакты</h1>
+        <p class="subtitle">Мы всегда готовы ответить на ваши вопросы и помочь с выбором экипировки</p>
+    </div>
+
+    <div class="contacts-grid">
+        <!-- Контактная информация -->
+        <div class="contact-info">
+            <h2>Свяжитесь с нами</h2>
+
+            <div class="info-item">
+                <div class="info-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Адрес</h3>
+                    <p>г. Москва, ул. Военная, д. 15, стр. 2</p>
+                    <p>Бизнес-центр «Арсенал», офис 304</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Телефоны</h3>
+                    <p><a href="tel:+74951234567">+7 (495) 123-45-67</a> - Отдел продаж</p>
+                    <p><a href="tel:+74957654321">+7 (495) 765-43-21</a> - Служба поддержки</p>
+                    <p><a href="tel:88001234567">8 (800) 123-45-67</a> - Бесплатный звонок по РФ</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Email</h3>
+                    <p><a href="mailto:info@voentorg.ru">info@voentorg.ru</a> - Общие вопросы</p>
+                    <p><a href="mailto:sales@voentorg.ru">sales@voentorg.ru</a> - Отдел продаж</p>
+                    <p><a href="mailto:support@voentorg.ru">support@voentorg.ru</a> - Поддержка</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Режим работы</h3>
+                    <div class="working-hours">
+                        <p class="days">Пн-Пт: <span class="time">9:00 - 20:00</span></p>
+                        <p class="days">Сб: <span class="time">10:00 - 18:00</span></p>
+                        <p class="days">Вс: <span class="time">Выходной</span></p>
+                        <p style="margin-top: 10px; color: #888;">Интернет-магазин работает круглосуточно</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="social-links">
+                <h3>Мы в соцсетях</h3>
+                <div class="social-icons">
+                    <a href="#" class="social-icon"><i class="fab fa-vk"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-telegram"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-whatsapp"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+
+            <div class="requisites-section">
+                <h3>Реквизиты компании</h3>
+                <p>ООО «Военторг»</p>
+                <p>ИНН 7712345678</p>
+                <p>КПП 771201001</p>
+                <p>ОГРН 1234567890123</p>
+                <p>р/с 40702810123450000001 в ПАО Сбербанк</p>
+                <p>к/с 30101810400000000225</p>
+                <p>БИК 044525225</p>
+            </div>
+        </div>
+
+        <!-- Форма обратной связи -->
+        <div class="contact-form-section">
+            <h2>Напишите нам</h2>
+            <form method="post" action="#" id="contact-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="name">Ваше имя *</label>
+                    <input type="text" id="name" name="name" required placeholder="Иван Петров">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required placeholder="ivan@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Телефон</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+7 (999) 123-45-67">
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Тема обращения *</label>
+                    <input type="text" id="subject" name="subject" required placeholder="Вопрос о товаре, доставке и т.д.">
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Сообщение *</label>
+                    <textarea id="message" name="message" required placeholder="Опишите ваш вопрос..."></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-paper-plane"></i> Отправить сообщение
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Карта -->
+    <div class="map-section">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2245.2235678901234!2d37.617634!3d55.755826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTXCsDQ1JzIxLjAiTiAzN8KwMzcnMDMuNSJF!5e0!3m2!1sru!2sru!4v1234567890123!5m2!1sru!2sru"
+                allowfullscreen=""
+                loading="lazy">
+        </iframe>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq-section">
+        <h2>Часто задаваемые вопросы</h2>
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h3><i class="fas fa-question-circle"></i> Как оформить заказ?</h3>
+                <p>Вы можете оформить заказ через корзину на сайте или связаться с нами по телефону для консультации.</p>
+            </div>
+            <div class="faq-item">
+                <h3><i class="fas fa-truck"></i> Сколько идет доставка?</h3>
+                <p>Доставка по Москве занимает 1-2 дня, в регионы от 3 до 7 дней в зависимости от удаленности.</p>
+            </div>
+            <div class="faq-item">
+                <h3><i class="fas fa-credit-card"></i> Какие способы оплаты?</h3>
+                <p>Мы принимаем банковские карты, наличные при получении, а также безналичный расчет для организаций.</p>
+            </div>
+            <div class="faq-item">
+                <h3><i class="fas fa-undo"></i> Можно ли вернуть товар?</h3>
+                <p>Да, вы можете вернуть товар надлежащего качества в течение 14 дней с момента получения.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'voentorg/js/contacts.js' %}"></script>
 {% endblock %}

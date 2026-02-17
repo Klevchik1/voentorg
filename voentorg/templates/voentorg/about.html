@@ -1,11 +1,141 @@
+<!-- voentorg/templates/voentorg/about.html -->
 {% extends 'voentorg/base.html' %}
+{% load static %}
 
-{% block title %}Каталог товаров{% endblock %}
+{% block title %}О компании - Военторг{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'voentorg/css/main.css' %}">
+<link rel="stylesheet" href="{% static 'voentorg/css/about.css' %}">
+{% endblock %}
 
 {% block content %}
-<h2>Каталог товаров</h2>
-<p>Страница каталога находится в разработке.</p>
-<a href="{% url 'home' %}" class="btn btn-primary">
-    <i class="fas fa-arrow-left"></i> Вернуться на главную
-</a>
+<div class="about-container">
+    <div class="about-header">
+        <h1>О компании «Военторг»</h1>
+        <p class="subtitle">Ваш надежный партнер в мире военной экипировки и снаряжения с 2010 года</p>
+    </div>
+
+    <div class="mission-section">
+        <h2>Наша миссия</h2>
+        <p>Обеспечение качественной и надежной экипировкой тех, кто стоит на страже безопасности нашей страны. Мы стремимся сделать процесс приобретения военного снаряжения максимально удобным и доступным.</p>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <i class="fas fa-shield-alt"></i>
+            <h3>Только оригинальная продукция</h3>
+            <p>Мы сотрудничаем только с проверенными производителями и официальными поставщиками</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-truck"></i>
+            <h3>Быстрая доставка</h3>
+            <p>Доставляем заказы по всей России от 1 до 7 дней в зависимости от региона</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-medal"></i>
+            <h3>Гарантия качества</h3>
+            <p>Предоставляем гарантию на все товары и возможность возврата в течение 14 дней</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-users"></i>
+            <h3>Профессиональная поддержка</h3>
+            <p>Наши консультанты помогут выбрать подходящую экипировку с учетом ваших задач</p>
+        </div>
+    </div>
+
+    <div class="history-section">
+        <div class="history-content">
+            <h2>Наша история</h2>
+            <p>Компания «Военторг» была основана в 2010 году группой офицеров запаса, которые столкнулись с проблемой отсутствия качественного и доступного военного снаряжения в розничной продаже.</p>
+            <p>Начав с небольшого магазина в Москве, мы постепенно расширяли ассортимент и географию присутствия. Сегодня «Военторг» — это современный интернет-магазин с тысячами наименований товаров и доставкой во все регионы России.</p>
+            <p>За годы работы мы помогли экипироваться более 50 000 клиентов: от военнослужащих и сотрудников силовых структур до коллекционеров и любителей активного отдыха.</p>
+        </div>
+        <div class="history-image">
+            <i class="fas fa-history"></i>
+        </div>
+    </div>
+
+    <div class="values-section">
+        <h2>Наши ценности</h2>
+        <div class="values-list">
+            <div class="value-item">
+                <div class="value-icon">1</div>
+                <div class="value-text">
+                    <h3>Качество превыше всего</h3>
+                    <p>Мы тщательно отбираем товары и проверяем каждого поставщика, чтобы вы получали только лучшее</p>
+                </div>
+            </div>
+            <div class="value-item">
+                <div class="value-icon">2</div>
+                <div class="value-text">
+                    <h3>Честность и открытость</h3>
+                    <p>Мы предоставляем полную информацию о товарах и условиях сотрудничества без скрытых условий</p>
+                </div>
+            </div>
+            <div class="value-item">
+                <div class="value-icon">3</div>
+                <div class="value-text">
+                    <h3>Клиентоориентированность</h3>
+                    <p>Ваши потребности и комфорт — основа нашей работы. Мы постоянно улучшаем сервис</p>
+                </div>
+            </div>
+            <div class="value-item">
+                <div class="value-icon">4</div>
+                <div class="value-text">
+                    <h3>Экспертность</h3>
+                    <p>Наша команда разбирается в военной экипировке и всегда готова поделиться знаниями</p>
+                </div>
+            </div>
+            <div class="value-item">
+                <div class="value-icon">5</div>
+                <div class="value-text">
+                    <h3>Надежность</h3>
+                    <p>Выполняем обязательства точно в срок и несем ответственность за каждый заказ</p>
+                </div>
+            </div>
+            <div class="value-item">
+                <div class="value-icon">6</div>
+                <div class="value-text">
+                    <h3>Патриотизм</h3>
+                    <p>Поддерживаем отечественного производителя и способствуем развитию оборонной промышленности</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="team-section">
+        <h2>Команда «Военторга»</h2>
+        <div class="team-grid">
+            <div class="team-member">
+                <div class="member-avatar">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h4>Седой Владик</h4>
+                <p>Основатель, директор</p>
+            </div>
+            <div class="team-member">
+                <div class="member-avatar">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <h4>Александр Берёзин</h4>
+                <p>Руководитель отдела снабжения</p>
+            </div>
+            <div class="team-member">
+                <div class="member-avatar">
+                    <i class="fas fa-user-headset"></i>
+                </div>
+                <h4>Юрчик</h4>
+                <p>Ведущий консультант</p>
+            </div>
+            <div class="team-member">
+                <div class="member-avatar">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <h4>Мишамиль Гришашаев</h4>
+                <p>Руководитель отдела продаж</p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

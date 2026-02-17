@@ -55,7 +55,6 @@
         <div class="container nav-container">
             <ul class="nav-links">
                 <li><a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}">Главная</a></li>
-                <li><a href="{% url 'catalog' %}" class="{% if request.path == '/catalog/' %}active{% endif %}">Каталог</a></li>
                 <li><a href="{% url 'about' %}" class="{% if request.path == '/about/' %}active{% endif %}">О нас</a></li>
                 <li><a href="{% url 'contacts' %}" class="{% if request.path == '/contacts/' %}active{% endif %}">Контакты</a></li>
                 {% if user.is_staff %}
