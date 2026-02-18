@@ -1,12 +1,13 @@
 import os
 import random
+import shutil
 from django.core.management.base import BaseCommand
 from django.core.files import File
+from django.core.files.images import ImageFile
 from django.conf import settings
-from voentorg.models import CustomUser, Category, Product, ProductImage, OrderStatus
+from voentorg.models import CustomUser, Category, Product, ProductImage, OrderStatus, Order, OrderItem, Cart, CartItem
 from django.utils.text import slugify
-from datetime import datetime, timedelta
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 import io
 
 
@@ -24,22 +25,110 @@ class Command(BaseCommand):
             action='store_true',
             help='Пропустить создание изображений',
         )
+        parser.add_argument(
+            '--force-placeholders',
+            action='store_true',
+            help='Использовать заглушки даже если есть реальные изображения',
+        )
 
     def handle(self, *args, **options):
         if options['clear']:
             self.stdout.write('Очистка базы данных...')
+
+            # Удаляем все связанные данные в правильном порядке
+            self.stdout.write('Удаление заказов...')
+            OrderItem.objects.all().delete()
+            Order.objects.all().delete()
+
+            self.stdout.write('Удаление корзин...')
+            CartItem.objects.all().delete()
+            Cart.objects.all().delete()
+
+            self.stdout.write('Удаление изображений товаров...')
             ProductImage.objects.all().delete()
+
+            self.stdout.write('Удаление товаров...')
             Product.objects.all().delete()
+
+            self.stdout.write('Удаление категорий...')
             Category.objects.all().delete()
+
+            self.stdout.write('Удаление тестовых пользователей...')
             CustomUser.objects.filter(is_superuser=False).delete()
+
+            self.stdout.write('Удаление статусов заказов...')
+            OrderStatus.objects.all().delete()
+
+            # Очищаем папку media/products
+            self.clean_media_files()
+
             self.stdout.write(self.style.SUCCESS('База данных очищена'))
 
         self.create_order_statuses()
         self.create_categories()
-        self.create_products(skip_images=options['skip_images'])
+
+        # Сканируем папку с исходными изображениями
+        source_images = self.scan_source_images()
+        self.stdout.write(f'Найдено исходных изображений: {len(source_images)}')
+
+        self.create_products(
+            source_images=source_images,
+            skip_images=options['skip_images'],
+            force_placeholders=options['force_placeholders']
+        )
         self.create_test_users()
 
         self.stdout.write(self.style.SUCCESS('База данных успешно заполнена!'))
+
+    def clean_media_files(self):
+        """Очищает папку media/products"""
+        products_dir = os.path.join(settings.MEDIA_ROOT, 'products')
+        if os.path.exists(products_dir):
+            try:
+                shutil.rmtree(products_dir)
+                self.stdout.write(f'Очищена папка: {products_dir}')
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f'Ошибка при очистке папки: {e}'))
+
+        # Создаем пустые папки заново
+        os.makedirs(os.path.join(products_dir, 'main'), exist_ok=True)
+        os.makedirs(os.path.join(products_dir, 'images'), exist_ok=True)
+
+    def scan_source_images(self):
+        """Сканирует папку source_images и возвращает словарь с изображениями по категориям"""
+        source_dir = os.path.join(settings.MEDIA_ROOT, 'source_images')
+        images_by_category = {}
+
+        if not os.path.exists(source_dir):
+            self.stdout.write(self.style.WARNING(f'Папка {source_dir} не найдена. Создаю...'))
+            os.makedirs(source_dir, exist_ok=True)
+            return images_by_category
+
+        # Проходим по всем подпапкам
+        for category_folder in os.listdir(source_dir):
+            category_path = os.path.join(source_dir, category_folder)
+            if os.path.isdir(category_path):
+                # Собираем все изображения в этой папке
+                images = []
+                for file in os.listdir(category_path):
+                    if file.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                        full_path = os.path.join(category_path, file)
+                        # Проверяем, что файл действительно является изображением
+                        try:
+                            with Image.open(full_path) as img:
+                                # Просто проверяем, что открывается
+                                images.append(full_path)
+                        except Exception as e:
+                            self.stdout.write(
+                                self.style.WARNING(f'  Файл {file} поврежден или не является изображением: {e}')
+                            )
+
+                if images:
+                    images.sort()  # Сортируем для предсказуемого порядка
+                    images_by_category[category_folder.lower()] = images
+                    self.stdout.write(f'  Найдено {len(images)} рабочих изображений в папке {category_folder}')
+
+        return images_by_category
 
     def create_order_statuses(self):
         """Создание статусов заказов"""
@@ -107,64 +196,66 @@ class Command(BaseCommand):
 
         self.stdout.write('Созданы категории товаров')
 
-    def create_image_placeholder(self, text, width=400, height=300, bg_color=None, text_color='white'):
-        """Создает изображение-заглушку с текстом"""
+    def copy_image_to_product(self, source_path, product, is_main=False, display_order=0):
+        """
+        Копирует изображение в папку product и создает запись в БД
+        Возвращает True в случае успеха
+        """
         try:
-            # Попробуем использовать PIL для создания изображений
-            from PIL import Image, ImageDraw, ImageFont
+            # Открываем изображение и проверяем его
+            with Image.open(source_path) as img:
+                # Конвертируем в RGB если нужно
+                if img.mode in ('RGBA', 'P'):
+                    rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+                    rgb_img.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                    img = rgb_img
 
-            # Если PIL установлен, создаем настоящее изображение
-            if bg_color is None:
-                # Случайный цвет из палитры военной тематики
-                military_colors = [
-                    (45, 90, 45),  # темно-зеленый
-                    (93, 93, 93),  # серый
-                    (0, 0, 0),  # черный
-                    (128, 128, 128),  # серый
-                    (45, 45, 45),  # темно-серый
-                ]
-                bg_color = random.choice(military_colors)
+                # Сохраняем во временный буфер
+                img_io = io.BytesIO()
+                img.save(img_io, format='JPEG', quality=85)
+                img_io.seek(0)
 
-            # Создаем изображение
-            image = Image.new('RGB', (width, height), color=bg_color)
-            draw = ImageDraw.Draw(image)
+                # Определяем имя файла - просто на основе товара
+                if is_main:
+                    filename = f"{slugify(product.name)}_main.jpg"
+                else:
+                    filename = f"{slugify(product.name)}_{display_order}.jpg"
 
-            # Пробуем использовать системный шрифт или стандартный
-            try:
-                font = ImageFont.truetype("arial.ttf", 24)
-            except:
-                font = ImageFont.load_default()
+                # Создаем Django File объект
+                django_file = File(img_io, name=filename)
 
-            # Вычисляем размер текста
-            try:
-                text_bbox = draw.textbbox((0, 0), text, font=font)
-                text_width = text_bbox[2] - text_bbox[0]
-                text_height = text_bbox[3] - text_bbox[1]
-                text_x = (width - text_width) // 2
-                text_y = (height - text_height) // 2
+                if is_main:
+                    # Сохраняем основное изображение
+                    product.image.save(filename, django_file, save=False)
+                    product.save()
+                    save_path = f"products/main/{filename}"
+                else:
+                    # Создаем дополнительное изображение
+                    img_obj = ProductImage.objects.create(
+                        product=product,
+                        image=django_file,
+                        is_main=False,
+                        display_order=display_order
+                    )
+                    save_path = str(img_obj.image)
 
-                # Рисуем текст
-                draw.text((text_x, text_y), text, fill=text_color, font=font)
-            except:
-                # Если не получилось с текстом, просто рисуем прямоугольник
-                draw.rectangle([50, 50, width - 50, height - 50], outline=text_color, width=3)
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'  {"Основное" if is_main else f"Доп.{display_order}"} изображение сохранено: {save_path}')
+                )
+                return True
 
-            # Сохраняем в BytesIO
-            img_io = io.BytesIO()
-            image.save(img_io, format='JPEG')
-            img_io.seek(0)
+        except Exception as e:
+            self.stdout.write(
+                self.style.WARNING(f'  Ошибка при обработке {source_path}: {str(e)}')
+            )
+            return False
 
-            return img_io
+    def create_products(self, source_images=None, skip_images=False, force_placeholders=False):
+        """Создание товаров с реальными изображениями из source_images"""
+        if source_images is None:
+            source_images = {}
 
-        except ImportError:
-            # Если PIL не установлен, создаем простой текстовый файл как заглушку
-            self.stdout.write(self.style.WARNING('PIL/Pillow не установлен, создаем простую заглушку'))
-            content = f"Изображение: {text}\nРазмер: {width}x{height}"
-            img_io = io.BytesIO(content.encode('utf-8'))
-            return img_io
-
-    def create_products(self, skip_images=False):
-        """Создание товаров с локальными изображениями-заглушками"""
         # Получаем все категории
         categories = {
             'одежда': Category.objects.get(slug='tactical-clothing'),
@@ -174,6 +265,17 @@ class Command(BaseCommand):
             'обувь': Category.objects.get(slug='footwear'),
             'медицина': Category.objects.get(slug='tactical-medicine'),
             'аксессуары': Category.objects.get(slug='accessories'),
+        }
+
+        # Соответствие категорий товаров и папок с изображениями
+        category_to_folder = {
+            'одежда': ['clothing', 'одежда'],
+            'рюкзаки': ['backpacks', 'рюкзаки'],
+            'снаряжение': ['gear', 'снаряжение'],
+            'палатки': ['tents', 'палатки'],
+            'обувь': ['footwear', 'обувь'],
+            'медицина': ['medicine', 'медицина'],
+            'аксессуары': ['accessories', 'аксессуары'],
         }
 
         products_data = [
@@ -312,8 +414,26 @@ class Command(BaseCommand):
             },
         ]
 
+        # Счетчики для распределения изображений
+        image_index = {}
+        for category_key, folders in category_to_folder.items():
+            for folder in folders:
+                if folder in source_images:
+                    image_index[category_key] = source_images[folder]
+                    break
+            if category_key not in image_index:
+                image_index[category_key] = []
+
+        stats = {
+            'total_products': 0,
+            'with_real_images': 0,
+            'with_placeholders': 0,
+            'real_images_count': 0,
+            'placeholder_images_count': 0
+        }
+
         # Создаем товары
-        for i, product_data in enumerate(products_data):
+        for product_data in products_data:
             product, created = Product.objects.get_or_create(
                 name=product_data['name'],
                 defaults={
@@ -327,57 +447,95 @@ class Command(BaseCommand):
                 }
             )
 
-            if created and not skip_images:
-                product_name = product_data['name']
-                slug_name = slugify(product_name)
+            if created:
+                stats['total_products'] += 1
 
-                # Создаем основное изображение
-                try:
-                    # Создаем изображение с названием товара
-                    short_name = product_name[:20]  # Берем первые 20 символов
-                    img_io = self.create_image_placeholder(short_name, 400, 300)
+                if skip_images:
+                    self.stdout.write(self.style.SUCCESS(f'Создан товар: {product.name} (без изображений)'))
+                    continue
 
-                    # Создаем файл Django
-                    django_file = File(img_io, name=f"{slug_name}_main.jpg")
+                # Определяем категорию товара для поиска изображений
+                category_key = None
+                for key, cat in categories.items():
+                    if cat == product_data['category']:
+                        category_key = key
+                        break
 
-                    # Сохраняем основное изображение товара
-                    product.image.save(django_file.name, django_file, save=False)
+                # Получаем изображения для этой категории
+                category_images = image_index.get(category_key, [])
 
-                    self.stdout.write(self.style.SUCCESS(f'Создано основное изображение для: {product_name}'))
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'Ошибка создания изображения для {product_name}: {str(e)}'))
-                    # Если не удалось создать изображение, оставляем поле пустым
+                # Если есть изображения и не форсируем заглушки
+                if not force_placeholders and category_images:
+                    # Берем изображения для этого товара (по 3 на товар)
+                    if not hasattr(self, '_img_counter'):
+                        self._img_counter = {}
 
-                product.save()
+                    counter_key = category_key
+                    start_idx = self._img_counter.get(counter_key, 0)
 
-                # Создаем дополнительные изображения (1-3 штуки)
-                for j in range(1, random.randint(2, 4)):
-                    try:
-                        # Создаем изображение с номером вида
-                        text = f"{short_name}\nВид {j}"
-                        img_io = self.create_image_placeholder(text, 400, 300)
+                    # Берем до 3 изображений для этого товара
+                    images_for_product = category_images[start_idx:start_idx + 3]
 
-                        # Создаем файл Django
-                        django_file = File(img_io, name=f"{slug_name}_{j}.jpg")
-
-                        # Создаем запись ProductImage
-                        ProductImage.objects.create(
-                            product=product,
-                            image=django_file,
-                            is_main=False,
-                            display_order=j
+                    if images_for_product:
+                        # Основное изображение - первое
+                        main_success = self.copy_image_to_product(
+                            images_for_product[0],
+                            product,
+                            is_main=True
                         )
 
-                        self.stdout.write(
-                            self.style.SUCCESS(f'  Создано дополнительное изображение {j} для: {product_name}'))
-                    except Exception as e:
-                        self.stdout.write(self.style.WARNING(
-                            f'  Ошибка создания дополнительного изображения {j} для {product_name}: {str(e)}'))
-                        continue
+                        if main_success:
+                            stats['with_real_images'] += 1
+                            stats['real_images_count'] += 1
+                            images_added = 1
 
-                self.stdout.write(self.style.SUCCESS(f'Создан товар: {product.name} с локальными изображениями'))
-            elif created:
-                self.stdout.write(self.style.SUCCESS(f'Создан товар: {product.name} (без изображений)'))
+                            # Дополнительные изображения - остальные
+                            for j, img_path in enumerate(images_for_product[1:], 1):
+                                add_success = self.copy_image_to_product(
+                                    img_path,
+                                    product,
+                                    is_main=False,
+                                    display_order=j
+                                )
+                                if add_success:
+                                    stats['real_images_count'] += 1
+                                    images_added += 1
+
+                            # Обновляем счетчик
+                            self._img_counter[counter_key] = start_idx + len(images_for_product)
+
+                            self.stdout.write(
+                                self.style.SUCCESS(f'Товар "{product.name}" получил {images_added} изображений')
+                            )
+                        else:
+                            # Если основное изображение не скопировалось, создаем заглушки
+                            self._create_placeholder_images(product, product_data, stats)
+                    else:
+                        # Если изображения кончились, создаем заглушки
+                        self._create_placeholder_images(product, product_data, stats)
+                else:
+                    # Нет изображений для категории или форсируем заглушки
+                    self._create_placeholder_images(product, product_data, stats)
+
+        # Выводим статистику
+        self.stdout.write(self.style.SUCCESS('\n=== СТАТИСТИКА ИЗОБРАЖЕНИЙ ==='))
+        self.stdout.write(f'Всего создано товаров: {stats["total_products"]}')
+        self.stdout.write(f'Товаров с реальными изображениями: {stats["with_real_images"]}')
+        self.stdout.write(f'Товаров с заглушками: {stats["with_placeholders"]}')
+        self.stdout.write(f'Всего реальных изображений: {stats["real_images_count"]}')
+        self.stdout.write(f'Всего заглушек: {stats["placeholder_images_count"]}')
+
+    def _create_placeholder_images(self, product, product_data, stats):
+        """Создает изображения-заглушки для товара"""
+        stats['with_placeholders'] += 1
+
+        self.stdout.write(
+            self.style.WARNING(f'Создание заглушек для: {product_data["name"]}')
+        )
+
+        # Здесь можно добавить логику создания заглушек если нужно
+        # Но пока просто сохраняем товар без изображений
+        product.save()
 
     def create_test_users(self):
         """Создание тестовых пользователей"""

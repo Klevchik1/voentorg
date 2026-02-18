@@ -24,7 +24,7 @@
             <div class="main-image">
                 {% with main_image=product.images.filter.is_main.first|default:product.images.first %}
                 {% if main_image %}
-                <img src="{{ main_image.image }}" alt="{{ product.name }}" id="main-product-image">
+                <img src="{{ main_image.image.url }}" alt="{{ product.name }}" id="main-product-image">
                 {% else %}
                 <img src="https://via.placeholder.com/500x400/2d5a2d/ffffff?text={{ product.name|slice:':20' }}" alt="{{ product.name }}" id="main-product-image">
                 {% endif %}
@@ -33,8 +33,8 @@
 
             <div class="thumbnails">
                 {% for image in product.images.all %}
-                <div class="thumbnail {% if forloop.first %}active{% endif %}" data-image="{{ image.image }}">
-                    <img src="{{ image.image }}" alt="{{ product.name }} - изображение {{ forloop.counter }}">
+                <div class="thumbnail {% if forloop.first %}active{% endif %}" data-image="{{ image.image.url }}">
+                    <img src="{{ image.image.url }}" alt="{{ product.name }} - изображение {{ forloop.counter }}">
                 </div>
                 {% empty %}
                 <div class="thumbnail active" data-image="https://via.placeholder.com/500x400/2d5a2d/ffffff?text={{ product.name|slice:':20' }}">

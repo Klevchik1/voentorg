@@ -73,11 +73,13 @@
             {% for product in products %}
             <div class="product-card" data-category="{{ product.category.id }}" data-price="{{ product.price }}" data-id="{{ product.id }}">
                 <div class="product-image">
-                    {% if product.images.first %}
-                    <img src="{{ product.images.first.image }}" alt="{{ product.name }}">
+                    {% with first_image=product.images.first %}
+                    {% if first_image %}
+                    <img src="{{ first_image.image.url }}" alt="{{ product.name }}">
                     {% else %}
                     <img src="https://via.placeholder.com/300x200/2d5a2d/ffffff?text={{ product.name|slice:':20' }}" alt="{{ product.name }}">
                     {% endif %}
+                    {% endwith %}
 
                     {% if product.stock < 5 %}
                     <span class="product-badge" style="background-color: #e74c3c;">Заканчивается</span>
