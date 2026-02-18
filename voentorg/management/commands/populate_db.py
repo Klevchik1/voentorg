@@ -215,11 +215,8 @@ class Command(BaseCommand):
                 img.save(img_io, format='JPEG', quality=85)
                 img_io.seek(0)
 
-                # Определяем имя файла - просто на основе товара
-                if is_main:
-                    filename = f"{slugify(product.name)}_main.jpg"
-                else:
-                    filename = f"{slugify(product.name)}_{display_order}.jpg"
+                # Определяем имя файла - с порядковым номером для гарантии порядка
+                filename = f"{slugify(product.name)}_{display_order}.jpg"
 
                 # Создаем Django File объект
                 django_file = File(img_io, name=filename)
@@ -228,7 +225,19 @@ class Command(BaseCommand):
                     # Сохраняем основное изображение
                     product.image.save(filename, django_file, save=False)
                     product.save()
-                    save_path = f"products/main/{filename}"
+
+                    # Также создаем запись в ProductImage для основного изображения
+                    # чтобы оно тоже было в product.images.all()
+                    img_obj = ProductImage.objects.create(
+                        product=product,
+                        image=django_file,
+                        is_main=True,
+                        display_order=0  # Основное всегда с порядком 0
+                    )
+                    save_path = str(img_obj.image)
+                    self.stdout.write(
+                        self.style.SUCCESS(f'  Основное изображение сохранено: {save_path}')
+                    )
                 else:
                     # Создаем дополнительное изображение
                     img_obj = ProductImage.objects.create(
@@ -238,11 +247,9 @@ class Command(BaseCommand):
                         display_order=display_order
                     )
                     save_path = str(img_obj.image)
-
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'  {"Основное" if is_main else f"Доп.{display_order}"} изображение сохранено: {save_path}')
-                )
+                    self.stdout.write(
+                        self.style.SUCCESS(f'  Доп.изображение {display_order} сохранено: {save_path}')
+                    )
                 return True
 
         except Exception as e:
@@ -477,11 +484,12 @@ class Command(BaseCommand):
                     images_for_product = category_images[start_idx:start_idx + 3]
 
                     if images_for_product:
-                        # Основное изображение - первое
+                        # Основное изображение - первое (display_order = 0)
                         main_success = self.copy_image_to_product(
                             images_for_product[0],
                             product,
-                            is_main=True
+                            is_main=True,
+                            display_order=0
                         )
 
                         if main_success:
@@ -489,7 +497,7 @@ class Command(BaseCommand):
                             stats['real_images_count'] += 1
                             images_added = 1
 
-                            # Дополнительные изображения - остальные
+                            # Дополнительные изображения - остальные (display_order = 1, 2, ...)
                             for j, img_path in enumerate(images_for_product[1:], 1):
                                 add_success = self.copy_image_to_product(
                                     img_path,
